@@ -142,7 +142,34 @@ bin/console doctrine:migrations:diff
 bin/console doctrine:migrations:migrate
 ```
 
-## API Endpoint
+## API Endpoints
+
+### GET /api/v2/auth/oauth/providers
+
+Discover available OAuth providers. This allows frontend applications to dynamically render OAuth login buttons based on which providers are enabled.
+
+**Response (200):**
+```json
+{
+    "providers": [
+        {"name": "google", "displayName": "Google"},
+        {"name": "apple", "displayName": "Apple"},
+        {"name": "keycloak", "displayName": "Keycloak"}
+    ]
+}
+```
+
+**Frontend Usage:**
+```javascript
+// Fetch available providers
+const response = await fetch('/api/v2/auth/oauth/providers');
+const { providers } = await response.json();
+
+// Render only enabled providers
+providers.forEach(provider => {
+    renderOAuthButton(provider.name, provider.displayName);
+});
+```
 
 ### POST /api/v2/auth/oauth/{provider}
 
@@ -218,6 +245,48 @@ Refresh an expired JWT token using the OAuth refresh token.
 ```
 
 **Note:** Google typically reuses the same refresh token. Apple may rotate refresh tokens on each use.
+
+### GET /api/v2/auth/oauth/connections (Authenticated)
+
+List OAuth providers connected to the current user's account. Requires authentication.
+
+**Response (200):**
+```json
+{
+    "connections": [
+        {"provider": "google", "displayName": "Google", "connectedAt": null},
+        {"provider": "apple", "displayName": "Apple", "connectedAt": null}
+    ]
+}
+```
+
+**Error Response (401):**
+```json
+{
+    "code": 401,
+    "message": "Authentication required"
+}
+```
+
+### DELETE /api/v2/auth/oauth/connections/{provider} (Authenticated)
+
+Unlink an OAuth provider from the current user's account. Requires authentication.
+
+**URL Parameters:**
+- `provider` - The OAuth provider name to unlink (`google`, `apple`, `facebook`, `github`, etc.)
+
+**Success Response (200):**
+```json
+{
+    "message": "Provider disconnected successfully",
+    "provider": "google"
+}
+```
+
+**Error Responses:**
+- `400` - Provider is not connected to this account
+- `400` - Cannot unlink the last authentication method (user has no password and no other provider)
+- `401` - Authentication required
 
 ## Frontend Integration
 

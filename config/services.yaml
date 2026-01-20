@@ -148,7 +148,23 @@ services:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
             $cache: '@?cache.app'
 
+    # OIDC Discovery Service Interface alias
+    Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryServiceInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryService
+
     # Provider Discovery Action (API)
     Marac\SyliusHeadlessOAuthBundle\Api\Action\ProviderDiscoveryAction:
         arguments:
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
+
+    # List OAuth Connections Action (API)
+    Marac\SyliusHeadlessOAuthBundle\Api\Action\ListOAuthConnectionsAction:
+        arguments:
+            $security: '@security.helper'
+            $providers: !tagged_iterator 'sylius_headless_oauth.provider'
+
+    # Unlink OAuth Connection Action (API)
+    Marac\SyliusHeadlessOAuthBundle\Api\Action\UnlinkOAuthConnectionAction:
+        arguments:
+            $security: '@security.helper'
+            $entityManager: '@doctrine.orm.entity_manager'

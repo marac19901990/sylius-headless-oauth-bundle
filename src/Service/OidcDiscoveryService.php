@@ -19,7 +19,7 @@ use function sprintf;
  * Fetches and caches the .well-known/openid-configuration document
  * which contains endpoints and capabilities of the OIDC provider.
  */
-final class OidcDiscoveryService
+final class OidcDiscoveryService implements OidcDiscoveryServiceInterface
 {
     private const CACHE_TTL = 3600; // 1 hour
 

@@ -48,12 +48,12 @@ final class ProviderFieldMapper
      *
      * @param OAuthIdentityInterface $entity The entity to update
      * @param string $provider The provider name
-     * @param string $providerId The provider-specific user ID
+     * @param string|null $providerId The provider-specific user ID, or null to unlink
      */
     public function setProviderId(
         OAuthIdentityInterface $entity,
         string $provider,
-        string $providerId,
+        ?string $providerId,
     ): void {
         match ($provider) {
             'google' => $entity->setGoogleId($providerId),
