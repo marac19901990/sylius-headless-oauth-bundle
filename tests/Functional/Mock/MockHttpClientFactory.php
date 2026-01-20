@@ -18,22 +18,23 @@ final class MockHttpClientFactory
 {
     private static ?MockHandler $mockHandler = null;
 
-    public static function getMockHandler(): ?MockHandler
+    public static function getMockHandler(): MockHandler
     {
+        if (self::$mockHandler === null) {
+            self::$mockHandler = new MockHandler();
+        }
+
         return self::$mockHandler;
     }
 
     public static function appendResponse(Response $response): void
     {
-        self::$mockHandler?->append($response);
+        self::getMockHandler()->append($response);
     }
 
     public static function reset(): void
     {
-        self::$mockHandler?->reset();
-        foreach (self::getDefaultResponsesStatic() as $response) {
-            self::$mockHandler?->append($response);
-        }
+        self::getMockHandler()->reset();
     }
 
     /**
@@ -157,28 +158,10 @@ final class MockHttpClientFactory
         ]));
     }
 
-    /**
-     * @return Response[]
-     */
-    private static function getDefaultResponsesStatic(): array
-    {
-        return [];
-    }
-
     public function create(): Client
     {
-        self::$mockHandler = new MockHandler($this->getDefaultResponses());
-
-        $handlerStack = HandlerStack::create(self::$mockHandler);
+        $handlerStack = HandlerStack::create(self::getMockHandler());
 
         return new Client(['handler' => $handlerStack]);
-    }
-
-    /**
-     * @return Response[]
-     */
-    private function getDefaultResponses(): array
-    {
-        return self::getDefaultResponsesStatic();
     }
 }
