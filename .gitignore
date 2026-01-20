@@ -33,3 +33,4 @@ Thumbs.db
 /build/
 /dist/
 .php-cs-fixer.cache
+.claude/

@@ -36,6 +36,7 @@
         "phpstan/phpstan": "^1.10",
         "phpstan/phpstan-phpunit": "^1.3",
         "phpunit/phpunit": "^10.0",
+        "roave/backward-compatibility-check": "^8.17",
         "sylius/core-bundle": "^1.12|^2.0",
         "symfony/phpunit-bridge": "^6.4|^7.0"
     },
