@@ -50,7 +50,7 @@ class TestCustomer implements CustomerInterface, OAuthIdentityInterface
     #[ORM\Column(length: 1)]
     private string $gender = CustomerInterface::UNKNOWN_GENDER;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTimeInterface $birthday = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -59,10 +59,10 @@ class TestCustomer implements CustomerInterface, OAuthIdentityInterface
     #[ORM\Column]
     private bool $subscribedToNewsletter = false;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTimeInterface $createdAt = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTimeInterface $updatedAt = null;
 
     #[ORM\OneToOne(targetEntity: TestShopUser::class, mappedBy: 'customer', cascade: ['persist', 'remove'])]
