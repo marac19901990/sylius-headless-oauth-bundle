@@ -37,3 +37,6 @@ Thumbs.db
 /dist/
 .php-cs-fixer.cache
 .claude/
+
+# Symfony auto-generated files
+/config/reference.php
