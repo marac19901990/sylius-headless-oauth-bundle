@@ -41,6 +41,7 @@ final class OAuthProcessor implements ProcessorInterface
      */
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): OAuthResponse
     {
+        /** @var string $providerName */
         $providerName = $uriVariables['provider'] ?? '';
 
         $provider = $this->findProvider($providerName);

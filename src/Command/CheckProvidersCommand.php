@@ -12,6 +12,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+use function sprintf;
+
 #[AsCommand(
     name: 'sylius:oauth:check-providers',
     description: 'Check the health and configuration of OAuth providers',

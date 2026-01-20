@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Marac\SyliusHeadlessOAuthBundle\Tests\Command;
 
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker;
-use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthStatus;
 use Marac\SyliusHeadlessOAuthBundle\Command\CheckProvidersCommand;
 use Marac\SyliusHeadlessOAuthBundle\Provider\ConfigurableOAuthProviderInterface;
 use PHPUnit\Framework\TestCase;
@@ -15,46 +14,18 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 class CheckProvidersCommandTest extends TestCase
 {
-    private function createCommandTester(array $providers): CommandTester
-    {
-        $healthChecker = new ProviderHealthChecker($providers);
-        $command = new CheckProvidersCommand($healthChecker);
-
-        $application = new Application();
-        $application->add($command);
-
-        return new CommandTester($application->find('sylius:oauth:check-providers'));
-    }
-
-    /**
-     * @param array<string, bool> $credentials
-     */
-    private function createConfigurableProvider(
-        string $name,
-        bool $enabled,
-        array $credentials,
-    ): ConfigurableOAuthProviderInterface {
-        $provider = $this->createMock(ConfigurableOAuthProviderInterface::class);
-
-        $provider->method('getName')->willReturn($name);
-        $provider->method('isEnabled')->willReturn($enabled);
-        $provider->method('getCredentialStatus')->willReturn($credentials);
-
-        return $provider;
-    }
-
     public function testCommandSuccessWithHealthyProviders(): void
     {
         $googleProvider = $this->createConfigurableProvider(
             name: 'google',
             enabled: true,
-            credentials: ['client_id' => true, 'client_secret' => true]
+            credentials: ['client_id' => true, 'client_secret' => true],
         );
 
         $appleProvider = $this->createConfigurableProvider(
             name: 'apple',
             enabled: false,
-            credentials: ['client_id' => true]
+            credentials: ['client_id' => true],
         );
 
         $commandTester = $this->createCommandTester([$googleProvider, $appleProvider]);
@@ -76,7 +47,7 @@ class CheckProvidersCommandTest extends TestCase
         $provider = $this->createConfigurableProvider(
             name: 'google',
             enabled: true,
-            credentials: ['client_id' => true, 'client_secret' => false]
+            credentials: ['client_id' => true, 'client_secret' => false],
         );
 
         $commandTester = $this->createCommandTester([$provider]);
@@ -105,7 +76,7 @@ class CheckProvidersCommandTest extends TestCase
         $provider = $this->createConfigurableProvider(
             name: 'google',
             enabled: true,
-            credentials: ['client_id' => true, 'client_secret' => true]
+            credentials: ['client_id' => true, 'client_secret' => true],
         );
 
         $commandTester = $this->createCommandTester([$provider]);
@@ -116,5 +87,33 @@ class CheckProvidersCommandTest extends TestCase
         $this->assertStringContainsString('client_id', $output);
         $this->assertStringContainsString('client_secret', $output);
         $this->assertStringContainsString('OK', $output);
+    }
+
+    private function createCommandTester(array $providers): CommandTester
+    {
+        $healthChecker = new ProviderHealthChecker($providers);
+        $command = new CheckProvidersCommand($healthChecker);
+
+        $application = new Application();
+        $application->add($command);
+
+        return new CommandTester($application->find('sylius:oauth:check-providers'));
+    }
+
+    /**
+     * @param array<string, bool> $credentials
+     */
+    private function createConfigurableProvider(
+        string $name,
+        bool $enabled,
+        array $credentials,
+    ): ConfigurableOAuthProviderInterface {
+        $provider = $this->createMock(ConfigurableOAuthProviderInterface::class);
+
+        $provider->method('getName')->willReturn($name);
+        $provider->method('isEnabled')->willReturn($enabled);
+        $provider->method('getCredentialStatus')->willReturn($credentials);
+
+        return $provider;
     }
 }

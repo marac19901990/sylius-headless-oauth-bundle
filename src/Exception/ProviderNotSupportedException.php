@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Exception;
 
+use function sprintf;
+
 /**
  * Thrown when an unknown OAuth provider is requested.
  */

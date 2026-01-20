@@ -6,6 +6,9 @@ namespace Marac\SyliusHeadlessOAuthBundle\Provider\Apple;
 
 use Firebase\JWT\JWT;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
+
+use function sprintf;
 
 /**
  * Generates the client_secret JWT required for Apple Sign-In.
@@ -20,44 +23,17 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
     private const APPLE_AUDIENCE = 'https://appleid.apple.com';
     private const MAX_EXPIRY_SECONDS = 15777000; // ~6 months
 
+    private readonly CredentialValidator $credentialValidator;
+
     public function __construct(
         private readonly string $clientId,
         private readonly string $teamId,
         private readonly string $keyId,
         private readonly string $privateKeyPath,
+        ?CredentialValidator $credentialValidator = null,
     ) {
+        $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
         $this->validateCredentials();
-    }
-
-    private function validateCredentials(): void
-    {
-        if (empty($this->clientId) || $this->clientId === '%env(APPLE_CLIENT_ID)%') {
-            throw new \InvalidArgumentException(
-                'Apple OAuth: APPLE_CLIENT_ID is not configured. ' .
-                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
-            );
-        }
-
-        if (empty($this->teamId) || $this->teamId === '%env(APPLE_TEAM_ID)%') {
-            throw new \InvalidArgumentException(
-                'Apple OAuth: APPLE_TEAM_ID is not configured. ' .
-                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
-            );
-        }
-
-        if (empty($this->keyId) || $this->keyId === '%env(APPLE_KEY_ID)%') {
-            throw new \InvalidArgumentException(
-                'Apple OAuth: APPLE_KEY_ID is not configured. ' .
-                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
-            );
-        }
-
-        if (empty($this->privateKeyPath) || $this->privateKeyPath === '%env(APPLE_PRIVATE_KEY_PATH)%') {
-            throw new \InvalidArgumentException(
-                'Apple OAuth: APPLE_PRIVATE_KEY_PATH is not configured. ' .
-                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
-            );
-        }
     }
 
     /**
@@ -83,12 +59,22 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
         return JWT::encode($payload, $privateKey, 'ES256', $this->keyId);
     }
 
+    private function validateCredentials(): void
+    {
+        $this->credentialValidator->validateMany([
+            ['value' => $this->clientId, 'env' => 'APPLE_CLIENT_ID', 'name' => 'client ID'],
+            ['value' => $this->teamId, 'env' => 'APPLE_TEAM_ID', 'name' => 'team ID'],
+            ['value' => $this->keyId, 'env' => 'APPLE_KEY_ID', 'name' => 'key ID'],
+            ['value' => $this->privateKeyPath, 'env' => 'APPLE_PRIVATE_KEY_PATH', 'name' => 'private key path'],
+        ], 'Apple');
+    }
+
     private function loadPrivateKey(): string
     {
         if (!file_exists($this->privateKeyPath)) {
             throw new OAuthException(sprintf(
                 'Apple private key file not found at: %s',
-                $this->privateKeyPath
+                $this->privateKeyPath,
             ));
         }
 
@@ -97,7 +83,7 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
         if ($privateKey === false) {
             throw new OAuthException(sprintf(
                 'Failed to read Apple private key file: %s',
-                $this->privateKeyPath
+                $this->privateKeyPath,
             ));
         }
 

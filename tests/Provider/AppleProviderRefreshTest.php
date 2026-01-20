@@ -66,7 +66,7 @@ class AppleProviderRefreshTest extends TestCase
                     return $options['form_params']['grant_type'] === 'refresh_token'
                         && $options['form_params']['refresh_token'] === 'original-refresh-token'
                         && $options['form_params']['client_secret'] === 'generated-client-secret';
-                })
+                }),
             )
             ->willReturn($refreshResponse);
 
@@ -104,7 +104,7 @@ class AppleProviderRefreshTest extends TestCase
             ->method('request')
             ->willThrowException(new \GuzzleHttp\Exception\ConnectException(
                 'Connection refused',
-                new \GuzzleHttp\Psr7\Request('POST', 'https://appleid.apple.com/auth/token')
+                new \GuzzleHttp\Psr7\Request('POST', 'https://appleid.apple.com/auth/token'),
             ));
 
         $this->expectException(OAuthException::class);

@@ -8,11 +8,13 @@ use Doctrine\ORM\EntityManagerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
-use Sylius\Component\User\Repository\UserRepositoryInterface;
+
+use function sprintf;
 
 /**
  * Resolves or creates a ShopUser from OAuth user data.
@@ -25,19 +27,16 @@ use Sylius\Component\User\Repository\UserRepositoryInterface;
  */
 final class UserResolver implements UserResolverInterface
 {
-    /**
-     * @param CustomerRepositoryInterface $customerRepository
-     * @param UserRepositoryInterface<ShopUserInterface> $shopUserRepository
-     * @param FactoryInterface<CustomerInterface> $customerFactory
-     * @param FactoryInterface<ShopUserInterface> $shopUserFactory
-     */
+    private readonly ProviderFieldMapper $fieldMapper;
+
     public function __construct(
         private readonly CustomerRepositoryInterface $customerRepository,
-        private readonly UserRepositoryInterface $shopUserRepository,
         private readonly FactoryInterface $customerFactory,
         private readonly FactoryInterface $shopUserFactory,
         private readonly EntityManagerInterface $entityManager,
+        ?ProviderFieldMapper $fieldMapper = null,
     ) {
+        $this->fieldMapper = $fieldMapper ?? new ProviderFieldMapper();
     }
 
     public function resolve(OAuthUserData $userData): ShopUserInterface
@@ -65,11 +64,7 @@ final class UserResolver implements UserResolverInterface
 
     private function findByProviderId(string $provider, string $providerId): ?CustomerInterface
     {
-        $field = match ($provider) {
-            'google' => 'googleId',
-            'apple' => 'appleId',
-            default => throw new OAuthException(sprintf('Unknown provider: %s', $provider)),
-        };
+        $field = $this->fieldMapper->getFieldName($provider);
 
         return $this->customerRepository->findOneBy([$field => $providerId]);
     }
@@ -79,15 +74,11 @@ final class UserResolver implements UserResolverInterface
         if (!$customer instanceof OAuthIdentityInterface) {
             throw new OAuthException(sprintf(
                 'Customer entity must implement %s. Add "use OAuthIdentityTrait;" to your Customer class.',
-                OAuthIdentityInterface::class
+                OAuthIdentityInterface::class,
             ));
         }
 
-        match ($userData->provider) {
-            'google' => $customer->setGoogleId($userData->providerId),
-            'apple' => $customer->setAppleId($userData->providerId),
-            default => throw new OAuthException(sprintf('Unknown provider: %s', $userData->provider)),
-        };
+        $this->fieldMapper->setProviderId($customer, $userData->provider, $userData->providerId);
 
         // Update name if not set and we have data (especially important for Apple's first-login-only name)
         if ($userData->firstName !== null && $customer->getFirstName() === null) {
@@ -132,7 +123,7 @@ final class UserResolver implements UserResolverInterface
         if (!$customer instanceof OAuthIdentityInterface) {
             throw new OAuthException(sprintf(
                 'Customer entity must implement %s. Add "use OAuthIdentityTrait;" to your Customer class.',
-                OAuthIdentityInterface::class
+                OAuthIdentityInterface::class,
             ));
         }
 
@@ -141,11 +132,7 @@ final class UserResolver implements UserResolverInterface
         $customer->setLastName($userData->lastName);
 
         // Link provider ID
-        match ($userData->provider) {
-            'google' => $customer->setGoogleId($userData->providerId),
-            'apple' => $customer->setAppleId($userData->providerId),
-            default => throw new OAuthException(sprintf('Unknown provider: %s', $userData->provider)),
-        };
+        $this->fieldMapper->setProviderId($customer, $userData->provider, $userData->providerId);
 
         /** @var ShopUserInterface $shopUser */
         $shopUser = $this->shopUserFactory->createNew();

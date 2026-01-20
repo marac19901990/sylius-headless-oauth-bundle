@@ -1,0 +1,22 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # Tests using json_encode which can return false
+        - '#Parameter .* expects .*, string\|false given#'
+        # Generic types for Sylius repositories
+        - '#with generic interface Sylius\\.*Interface does not specify its types#'
+        - '#has parameter \$\w+ with generic interface Sylius\\.*Interface but does not specify its types#'
+        # Sylius repository/factory return types
+        - '#should return Sylius\\Component\\Core\\Model\\.* but returns Sylius\\.*#'
+        - '#expects Sylius\\Component\\Core\\Model\\.*, Sylius\\.*Interface given#'
+        # Test file method parameter types
+        - '#has parameter \$\w+ with no (value )?type specified#'
+        # Test array access issues
+        - '#Cannot access offset .* on array\|false#'
+    excludePaths:
+        - tests/bootstrap.php

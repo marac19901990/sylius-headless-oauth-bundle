@@ -3,6 +3,12 @@ services:
         autowire: true
         autoconfigure: true
 
+    # Credential Validator
+    Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator: ~
+
+    # Provider Field Mapper
+    Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper: ~
+
     # HTTP Client for OAuth requests
     Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient:
         class: GuzzleHttp\Client
@@ -42,7 +48,6 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver:
         arguments:
             $customerRepository: '@sylius.repository.customer'
-            $shopUserRepository: '@sylius.repository.shop_user'
             $customerFactory: '@sylius.factory.customer'
             $shopUserFactory: '@sylius.factory.shop_user'
             $entityManager: '@doctrine.orm.entity_manager'

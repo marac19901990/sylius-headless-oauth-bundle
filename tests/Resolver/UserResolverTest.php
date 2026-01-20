@@ -15,12 +15,10 @@ use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
-use Sylius\Component\User\Repository\UserRepositoryInterface;
 
 class UserResolverTest extends TestCase
 {
     private CustomerRepositoryInterface&MockObject $customerRepository;
-    private UserRepositoryInterface&MockObject $shopUserRepository;
     private FactoryInterface&MockObject $customerFactory;
     private FactoryInterface&MockObject $shopUserFactory;
     private EntityManagerInterface&MockObject $entityManager;
@@ -29,14 +27,12 @@ class UserResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->customerRepository = $this->createMock(CustomerRepositoryInterface::class);
-        $this->shopUserRepository = $this->createMock(UserRepositoryInterface::class);
         $this->customerFactory = $this->createMock(FactoryInterface::class);
         $this->shopUserFactory = $this->createMock(FactoryInterface::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
 
         $this->resolver = new UserResolver(
             customerRepository: $this->customerRepository,
-            shopUserRepository: $this->shopUserRepository,
             customerFactory: $this->customerFactory,
             shopUserFactory: $this->shopUserFactory,
             entityManager: $this->entityManager,
@@ -118,6 +114,7 @@ class UserResolverTest extends TestCase
                 if (isset($criteria['email'])) {
                     return $customer; // Found by email
                 }
+
                 return null;
             });
 
@@ -246,6 +243,7 @@ class UserResolverTest extends TestCase
                 if (isset($criteria['email'])) {
                     return $customer;
                 }
+
                 return null;
             });
 
@@ -284,6 +282,7 @@ class UserResolverTest extends TestCase
                 if (isset($criteria['email'])) {
                     return $customer;
                 }
+
                 return null;
             });
 
@@ -329,6 +328,7 @@ class UserResolverTest extends TestCase
                 if (isset($criteria['email'])) {
                     return $regularCustomer; // Returns customer without OAuthIdentityInterface
                 }
+
                 return null;
             });
 

@@ -37,9 +37,9 @@ class OAuthProcessorTest extends TestCase
 
         // Configure provider supports() methods
         $this->googleProvider->method('supports')
-            ->willReturnCallback(fn(string $p) => strtolower($p) === 'google');
+            ->willReturnCallback(fn (string $p) => strtolower($p) === 'google');
         $this->appleProvider->method('supports')
-            ->willReturnCallback(fn(string $p) => strtolower($p) === 'apple');
+            ->willReturnCallback(fn (string $p) => strtolower($p) === 'apple');
 
         $this->processor = new OAuthProcessor(
             providers: [$this->googleProvider, $this->appleProvider],

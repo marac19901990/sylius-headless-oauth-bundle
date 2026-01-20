@@ -6,9 +6,14 @@ namespace Marac\SyliusHeadlessOAuthBundle\Tests\Provider\Apple;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator;
 use PHPUnit\Framework\TestCase;
+
+use function strlen;
+
+use const OPENSSL_KEYTYPE_EC;
 
 class AppleClientSecretGeneratorTest extends TestCase
 {
@@ -184,19 +189,9 @@ class AppleClientSecretGeneratorTest extends TestCase
         $this->assertSame('TEAM222222', $decoded2->iss);
     }
 
-    private function base64UrlDecode(string $data): string
-    {
-        $remainder = strlen($data) % 4;
-        if ($remainder) {
-            $data .= str_repeat('=', 4 - $remainder);
-        }
-
-        return base64_decode(strtr($data, '-_', '+/'), true) ?: '';
-    }
-
     public function testThrowsExceptionOnEmptyClientId(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
 
         new AppleClientSecretGenerator(
@@ -209,7 +204,7 @@ class AppleClientSecretGeneratorTest extends TestCase
 
     public function testThrowsExceptionOnEmptyTeamId(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('APPLE_TEAM_ID is not configured');
 
         new AppleClientSecretGenerator(
@@ -222,7 +217,7 @@ class AppleClientSecretGeneratorTest extends TestCase
 
     public function testThrowsExceptionOnEmptyKeyId(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('APPLE_KEY_ID is not configured');
 
         new AppleClientSecretGenerator(
@@ -235,7 +230,7 @@ class AppleClientSecretGeneratorTest extends TestCase
 
     public function testThrowsExceptionOnEmptyPrivateKeyPath(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('APPLE_PRIVATE_KEY_PATH is not configured');
 
         new AppleClientSecretGenerator(
@@ -248,7 +243,7 @@ class AppleClientSecretGeneratorTest extends TestCase
 
     public function testThrowsExceptionOnUnresolvedEnvPlaceholder(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('APPLE_TEAM_ID is not configured');
 
         new AppleClientSecretGenerator(
@@ -257,5 +252,15 @@ class AppleClientSecretGeneratorTest extends TestCase
             keyId: 'KEY123456',
             privateKeyPath: $this->testKeyPath,
         );
+    }
+
+    private function base64UrlDecode(string $data): string
+    {
+        $remainder = strlen($data) % 4;
+        if ($remainder) {
+            $data .= str_repeat('=', 4 - $remainder);
+        }
+
+        return base64_decode(strtr($data, '-_', '+/'), true) ?: '';
     }
 }

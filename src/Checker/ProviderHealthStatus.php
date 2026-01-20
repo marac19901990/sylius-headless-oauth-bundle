@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Checker;
 
+use function in_array;
+
 /**
  * Represents the health status of an OAuth provider.
  */

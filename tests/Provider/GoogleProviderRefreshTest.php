@@ -51,7 +51,7 @@ class GoogleProviderRefreshTest extends TestCase
                 $this->callback(function ($options) {
                     return $options['form_params']['grant_type'] === 'refresh_token'
                         && $options['form_params']['refresh_token'] === 'original-refresh-token';
-                })
+                }),
             )
             ->willReturn($refreshResponse);
 
@@ -90,7 +90,7 @@ class GoogleProviderRefreshTest extends TestCase
             ->method('request')
             ->willThrowException(new \GuzzleHttp\Exception\ConnectException(
                 'Connection refused',
-                new \GuzzleHttp\Psr7\Request('POST', 'https://oauth2.googleapis.com/token')
+                new \GuzzleHttp\Psr7\Request('POST', 'https://oauth2.googleapis.com/token'),
             ));
 
         $this->expectException(OAuthException::class);
@@ -116,7 +116,7 @@ class GoogleProviderRefreshTest extends TestCase
                 'https://www.googleapis.com/oauth2/v2/userinfo',
                 $this->callback(function ($options) {
                     return $options['headers']['Authorization'] === 'Bearer test-access-token';
-                })
+                }),
             )
             ->willReturn($userInfoResponse);
 

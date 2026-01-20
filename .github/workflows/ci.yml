@@ -7,16 +7,78 @@ on:
     branches: [master, main]
 
 jobs:
-  test:
+  code-style:
+    name: Code Style
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: ['8.2', '8.3']
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: php-cs-fixer
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist
+
+      - name: Check code style
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --no-progress
+
+  tests:
+    name: Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3']
+        include:
+          - php: '8.3'
+            coverage: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          coverage: none
-      - run: composer install --no-progress
-      - run: vendor/bin/phpunit
+          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist
+
+      - name: Run tests
+        if: ${{ !matrix.coverage }}
+        run: vendor/bin/phpunit
+
+      - name: Run tests with coverage
+        if: ${{ matrix.coverage }}
+        run: vendor/bin/phpunit --coverage-clover coverage.xml --coverage-text
+
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.coverage }}
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

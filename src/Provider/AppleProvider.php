@@ -6,10 +6,17 @@ namespace Marac\SyliusHeadlessOAuthBundle\Provider;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
+use JsonException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
+
+use function count;
+use function strlen;
+
+use const JSON_THROW_ON_ERROR;
 
 /**
  * Apple Sign-In OAuth provider.
@@ -23,30 +30,25 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
     private const TOKEN_URL = 'https://appleid.apple.com/auth/token';
     private const PROVIDER_NAME = 'apple';
 
+    private readonly CredentialValidator $credentialValidator;
+
     public function __construct(
         private readonly ClientInterface $httpClient,
         private readonly AppleClientSecretGeneratorInterface $clientSecretGenerator,
         private readonly string $clientId,
         private readonly bool $enabled = true,
+        ?CredentialValidator $credentialValidator = null,
     ) {
+        $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
+
         if ($this->enabled) {
             $this->validateCredentials();
         }
     }
 
-    private function validateCredentials(): void
-    {
-        if (empty($this->clientId) || $this->clientId === '%env(APPLE_CLIENT_ID)%') {
-            throw new \InvalidArgumentException(
-                'Apple OAuth is enabled but APPLE_CLIENT_ID is not configured. ' .
-                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
-            );
-        }
-    }
-
     public function supports(string $provider): bool
     {
-        return $this->enabled && self::PROVIDER_NAME === strtolower($provider);
+        return $this->enabled && strtolower($provider) === self::PROVIDER_NAME;
     }
 
     public function getName(): string
@@ -94,7 +96,7 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
         // The actual implementation uses decodeIdTokenForUserData with the id_token.
         throw new OAuthException(
             'Apple does not support fetching user data from access token. ' .
-            'Use the id_token from the refresh response instead.'
+            'Use the id_token from the refresh response instead.',
         );
     }
 
@@ -112,6 +114,18 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
             firstName: $data['firstName'] ?? null,
             lastName: $data['lastName'] ?? null,
         );
+    }
+
+    public function getUserDataFromTokenData(OAuthTokenData $tokenData): OAuthUserData
+    {
+        // Apple uses id_token to extract user data (no userinfo endpoint)
+        if ($tokenData->idToken === null) {
+            throw new OAuthException(
+                'Apple refresh response did not include id_token. Cannot identify user.',
+            );
+        }
+
+        return $this->getUserDataFromIdToken($tokenData->idToken);
     }
 
     public function refreshTokens(string $refreshToken): OAuthTokenData
@@ -144,9 +158,19 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
             );
         } catch (GuzzleException $e) {
             throw new OAuthException('Failed to refresh Apple tokens: ' . $e->getMessage(), 0, $e);
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             throw new OAuthException('Failed to parse Apple refresh response: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    private function validateCredentials(): void
+    {
+        $this->credentialValidator->validate(
+            $this->clientId,
+            'APPLE_CLIENT_ID',
+            'Apple',
+            'client ID',
+        );
     }
 
     /**
@@ -176,7 +200,7 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
             return $data;
         } catch (GuzzleException $e) {
             throw new OAuthException('Failed to exchange Apple authorization code: ' . $e->getMessage(), 0, $e);
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             throw new OAuthException('Failed to parse Apple token response: ' . $e->getMessage(), 0, $e);
         }
     }

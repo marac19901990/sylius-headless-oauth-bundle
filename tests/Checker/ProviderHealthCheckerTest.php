@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Marac\SyliusHeadlessOAuthBundle\Tests\Checker;
 
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker;
-use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthStatus;
 use Marac\SyliusHeadlessOAuthBundle\Provider\ConfigurableOAuthProviderInterface;
-use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -18,13 +16,13 @@ class ProviderHealthCheckerTest extends TestCase
         $googleProvider = $this->createConfigurableProvider(
             name: 'google',
             enabled: true,
-            credentials: ['client_id' => true, 'client_secret' => true]
+            credentials: ['client_id' => true, 'client_secret' => true],
         );
 
         $appleProvider = $this->createConfigurableProvider(
             name: 'apple',
             enabled: false,
-            credentials: ['client_id' => true]
+            credentials: ['client_id' => true],
         );
 
         $checker = new ProviderHealthChecker([$googleProvider, $appleProvider]);
@@ -59,7 +57,7 @@ class ProviderHealthCheckerTest extends TestCase
         $provider = $this->createConfigurableProvider(
             name: 'google',
             enabled: true,
-            credentials: ['client_id' => true, 'client_secret' => false]
+            credentials: ['client_id' => true, 'client_secret' => false],
         );
 
         $checker = new ProviderHealthChecker([$provider]);
@@ -76,13 +74,13 @@ class ProviderHealthCheckerTest extends TestCase
         $provider1 = $this->createConfigurableProvider(
             name: 'google',
             enabled: true,
-            credentials: ['client_id' => true, 'client_secret' => true]
+            credentials: ['client_id' => true, 'client_secret' => true],
         );
 
         $provider2 = $this->createConfigurableProvider(
             name: 'apple',
             enabled: false,
-            credentials: ['client_id' => false]
+            credentials: ['client_id' => false],
         );
 
         $checker = new ProviderHealthChecker([$provider1, $provider2]);
@@ -95,7 +93,7 @@ class ProviderHealthCheckerTest extends TestCase
         $provider = $this->createConfigurableProvider(
             name: 'google',
             enabled: true,
-            credentials: ['client_id' => true, 'client_secret' => false]
+            credentials: ['client_id' => true, 'client_secret' => false],
         );
 
         $checker = new ProviderHealthChecker([$provider]);

@@ -6,9 +6,13 @@ namespace Marac\SyliusHeadlessOAuthBundle\Provider;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
+use JsonException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
+
+use const JSON_THROW_ON_ERROR;
 
 final class GoogleProvider implements ConfigurableOAuthProviderInterface, RefreshableOAuthProviderInterface
 {
@@ -16,37 +20,25 @@ final class GoogleProvider implements ConfigurableOAuthProviderInterface, Refres
     private const USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
     private const PROVIDER_NAME = 'google';
 
+    private readonly CredentialValidator $credentialValidator;
+
     public function __construct(
         private readonly ClientInterface $httpClient,
         private readonly string $clientId,
         private readonly string $clientSecret,
         private readonly bool $enabled = true,
+        ?CredentialValidator $credentialValidator = null,
     ) {
+        $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
+
         if ($this->enabled) {
             $this->validateCredentials();
         }
     }
 
-    private function validateCredentials(): void
-    {
-        if (empty($this->clientId) || $this->clientId === '%env(GOOGLE_CLIENT_ID)%') {
-            throw new \InvalidArgumentException(
-                'Google OAuth is enabled but GOOGLE_CLIENT_ID is not configured. ' .
-                'Set the environment variable or disable Google: sylius_headless_oauth.providers.google.enabled: false'
-            );
-        }
-
-        if (empty($this->clientSecret) || $this->clientSecret === '%env(GOOGLE_CLIENT_SECRET)%') {
-            throw new \InvalidArgumentException(
-                'Google OAuth is enabled but GOOGLE_CLIENT_SECRET is not configured. ' .
-                'Set the environment variable or disable Google: sylius_headless_oauth.providers.google.enabled: false'
-            );
-        }
-    }
-
     public function supports(string $provider): bool
     {
-        return $this->enabled && self::PROVIDER_NAME === strtolower($provider);
+        return $this->enabled && strtolower($provider) === self::PROVIDER_NAME;
     }
 
     public function getName(): string
@@ -100,6 +92,12 @@ final class GoogleProvider implements ConfigurableOAuthProviderInterface, Refres
         );
     }
 
+    public function getUserDataFromTokenData(OAuthTokenData $tokenData): OAuthUserData
+    {
+        // Google uses access_token to fetch user info from userinfo endpoint
+        return $this->getUserDataFromAccessToken($tokenData->accessToken);
+    }
+
     public function refreshTokens(string $refreshToken): OAuthTokenData
     {
         try {
@@ -127,9 +125,17 @@ final class GoogleProvider implements ConfigurableOAuthProviderInterface, Refres
             );
         } catch (GuzzleException $e) {
             throw new OAuthException('Failed to refresh Google tokens: ' . $e->getMessage(), 0, $e);
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             throw new OAuthException('Failed to parse Google refresh response: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    private function validateCredentials(): void
+    {
+        $this->credentialValidator->validateMany([
+            ['value' => $this->clientId, 'env' => 'GOOGLE_CLIENT_ID', 'name' => 'client ID'],
+            ['value' => $this->clientSecret, 'env' => 'GOOGLE_CLIENT_SECRET', 'name' => 'client secret'],
+        ], 'Google');
     }
 
     /**
@@ -157,7 +163,7 @@ final class GoogleProvider implements ConfigurableOAuthProviderInterface, Refres
             return $data;
         } catch (GuzzleException $e) {
             throw new OAuthException('Failed to exchange Google authorization code: ' . $e->getMessage(), 0, $e);
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             throw new OAuthException('Failed to parse Google token response: ' . $e->getMessage(), 0, $e);
         }
     }
@@ -183,7 +189,7 @@ final class GoogleProvider implements ConfigurableOAuthProviderInterface, Refres
             return $data;
         } catch (GuzzleException $e) {
             throw new OAuthException('Failed to fetch Google user info: ' . $e->getMessage(), 0, $e);
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             throw new OAuthException('Failed to parse Google user info response: ' . $e->getMessage(), 0, $e);
         }
     }
