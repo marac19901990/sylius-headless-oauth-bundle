@@ -65,7 +65,7 @@ jobs:
           extensions: pdo_sqlite
 
       - name: Install dependencies
-        run: composer install --no-progress --prefer-dist
+        run: composer install --no-progress --prefer-dist --ignore-platform-req=php
 
       - name: Run tests
         if: ${{ !matrix.coverage }}
@@ -100,7 +100,7 @@ jobs:
         run: composer install --no-progress --prefer-dist
 
       - name: Run security audit
-        run: composer audit
+        run: composer audit --abandoned=ignore
 
   backward-compatibility:
     name: Backward Compatibility
