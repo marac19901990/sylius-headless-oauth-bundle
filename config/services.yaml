@@ -118,3 +118,14 @@ services:
             $healthChecker: '@Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker'
         tags:
             - { name: 'console.command' }
+
+    # Twig Extension for OAuth Provider Display
+    Marac\SyliusHeadlessOAuthBundle\Twig\OAuthExtension:
+        tags:
+            - { name: 'twig.extension' }
+
+    # OIDC Discovery Service
+    Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryService:
+        arguments:
+            $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $cache: '@?cache.app'

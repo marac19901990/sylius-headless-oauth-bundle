@@ -1,0 +1,21 @@
+# Extends Sylius customer grid to add OAuth providers column
+#
+# To use this configuration, import it in your application:
+#
+# In config/packages/sylius_grid.yaml:
+#   imports:
+#       - { resource: '@SyliusHeadlessOAuthBundle/config/grids/customer.yaml' }
+#
+# Or manually merge with your existing customer grid configuration.
+
+sylius_grid:
+    grids:
+        sylius_admin_customer:
+            fields:
+                oauth_providers:
+                    type: twig
+                    label: sylius_headless_oauth.ui.oauth
+                    sortable: false
+                    options:
+                        template: '@SyliusHeadlessOAuth/Grid/Column/oauth_providers.html.twig'
+                    position: 50

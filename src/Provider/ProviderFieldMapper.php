@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Marac\SyliusHeadlessOAuthBundle\Provider;
 
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
-use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
-
-use function sprintf;
 
 /**
  * Maps OAuth provider names to their corresponding entity field names.
@@ -21,21 +18,28 @@ final class ProviderFieldMapper
         'google' => 'googleId',
         'apple' => 'appleId',
         'facebook' => 'facebookId',
+        'oidc' => 'oidcId',
     ];
 
     /**
      * Get the entity field name for a provider's ID.
      *
-     * @param string $provider The provider name (e.g., 'google', 'apple')
+     * For known providers (google, apple, facebook), returns their specific field.
+     * For OIDC providers (or any unknown provider), returns 'oidcId' as the default.
      *
-     * @throws OAuthException If the provider is unknown
+     * @param string $provider The provider name (e.g., 'google', 'apple', 'keycloak')
      *
-     * @return string The entity field name (e.g., 'googleId', 'appleId')
+     * @return string The entity field name (e.g., 'googleId', 'appleId', 'oidcId')
      */
     public function getFieldName(string $provider): string
     {
-        return self::PROVIDER_FIELD_MAP[$provider]
-            ?? throw new OAuthException(sprintf('Unknown provider: %s', $provider));
+        // Known providers use their specific fields
+        if (isset(self::PROVIDER_FIELD_MAP[$provider])) {
+            return self::PROVIDER_FIELD_MAP[$provider];
+        }
+
+        // Unknown providers (custom OIDC) use the generic oidcId field
+        return 'oidcId';
     }
 
     /**
@@ -44,8 +48,6 @@ final class ProviderFieldMapper
      * @param OAuthIdentityInterface $entity The entity to update
      * @param string $provider The provider name
      * @param string $providerId The provider-specific user ID
-     *
-     * @throws OAuthException If the provider is unknown
      */
     public function setProviderId(
         OAuthIdentityInterface $entity,
@@ -56,25 +58,53 @@ final class ProviderFieldMapper
             'google' => $entity->setGoogleId($providerId),
             'apple' => $entity->setAppleId($providerId),
             'facebook' => $entity->setFacebookId($providerId),
-            default => throw new OAuthException(sprintf('Unknown provider: %s', $provider)),
+            // Any OIDC or custom provider uses the generic oidcId field
+            default => $entity->setOidcId($providerId),
         };
     }
 
     /**
-     * Get all supported provider names.
+     * Get the provider ID from an entity implementing OAuthIdentityInterface.
+     *
+     * @param OAuthIdentityInterface $entity The entity to read from
+     * @param string $provider The provider name
+     *
+     * @return string|null The provider-specific user ID or null if not set
+     */
+    public function getProviderId(OAuthIdentityInterface $entity, string $provider): ?string
+    {
+        return match ($provider) {
+            'google' => $entity->getGoogleId(),
+            'apple' => $entity->getAppleId(),
+            'facebook' => $entity->getFacebookId(),
+            // Any OIDC or custom provider uses the generic oidcId field
+            default => $entity->getOidcId(),
+        };
+    }
+
+    /**
+     * Get all built-in provider names (excluding custom OIDC).
      *
      * @return array<string>
      */
-    public function getSupportedProviders(): array
+    public function getBuiltInProviders(): array
     {
         return array_keys(self::PROVIDER_FIELD_MAP);
     }
 
     /**
-     * Check if a provider is supported.
+     * Check if a provider is a built-in provider.
      */
-    public function isSupported(string $provider): bool
+    public function isBuiltInProvider(string $provider): bool
     {
         return isset(self::PROVIDER_FIELD_MAP[$provider]);
+    }
+
+    /**
+     * Check if a provider uses the generic OIDC field.
+     */
+    public function usesOidcField(string $provider): bool
+    {
+        return !$this->isBuiltInProvider($provider) || $provider === 'oidc';
     }
 }

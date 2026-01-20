@@ -1,0 +1,122 @@
+{#
+    OAuth Admin Styles
+
+    Include this in your admin layout or via template event to add OAuth styling.
+
+    Usage via Sylius template event:
+        sylius_ui_event:
+            events:
+                sylius.admin.layout.stylesheets:
+                    blocks:
+                        oauth_styles:
+                            template: '@SyliusHeadlessOAuth/Admin/_styles.html.twig'
+#}
+
+<style>
+    /* OAuth Badge Styles */
+    .oauth-badges {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .oauth-badges--compact .oauth-badge {
+        padding: 2px 4px;
+    }
+
+    .oauth-badges--empty {
+        color: #999;
+    }
+
+    .oauth-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background-color: #f5f5f5;
+        font-size: 12px;
+        color: var(--oauth-color, #333);
+        transition: background-color 0.15s ease;
+    }
+
+    .oauth-badge:hover {
+        background-color: #e8e8e8;
+    }
+
+    .oauth-badge__icon {
+        flex-shrink: 0;
+    }
+
+    .oauth-badge__label {
+        font-weight: 500;
+    }
+
+    /* Grid Badges */
+    .oauth-grid-badges {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .oauth-grid-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .oauth-grid-badge:hover {
+        background-color: #e9ecef;
+        transform: scale(1.1);
+    }
+
+    .oauth-grid-badge--none {
+        color: #adb5bd;
+        font-size: 14px;
+    }
+
+    .oauth-grid-badge svg {
+        display: block;
+    }
+
+    /* Provider Block Styles */
+    #oauth-providers .oauth-provider-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #oauth-providers .oauth-provider-icon svg {
+        display: block;
+    }
+
+    #oauth-providers .oauth-provider-id {
+        font-size: 11px;
+        color: #666;
+        background-color: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+
+    /* Provider-specific colors on hover */
+    .oauth-badge--google:hover,
+    .oauth-grid-badge--google:hover {
+        background-color: rgba(66, 133, 244, 0.1);
+    }
+
+    .oauth-badge--apple:hover,
+    .oauth-grid-badge--apple:hover {
+        background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    .oauth-badge--facebook:hover,
+    .oauth-grid-badge--facebook:hover {
+        background-color: rgba(24, 119, 242, 0.1);
+    }
+</style>

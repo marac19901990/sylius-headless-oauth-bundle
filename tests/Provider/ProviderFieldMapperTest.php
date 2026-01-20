@@ -6,7 +6,6 @@ namespace Marac\SyliusHeadlessOAuthBundle\Tests\Provider;
 
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityTrait;
-use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -31,6 +30,7 @@ final class ProviderFieldMapperTest extends TestCase
         yield 'google' => ['google', 'googleId'];
         yield 'apple' => ['apple', 'appleId'];
         yield 'facebook' => ['facebook', 'facebookId'];
+        yield 'oidc' => ['oidc', 'oidcId'];
     }
 
     #[Test]
@@ -41,12 +41,12 @@ final class ProviderFieldMapperTest extends TestCase
     }
 
     #[Test]
-    public function throwsExceptionForUnknownProvider(): void
+    public function unknownProvidersFallBackToOidcId(): void
     {
-        $this->expectException(OAuthException::class);
-        $this->expectExceptionMessage('Unknown provider: twitter');
-
-        $this->mapper->getFieldName('twitter');
+        // Unknown providers should fall back to oidcId field
+        self::assertSame('oidcId', $this->mapper->getFieldName('keycloak'));
+        self::assertSame('oidcId', $this->mapper->getFieldName('auth0'));
+        self::assertSame('oidcId', $this->mapper->getFieldName('custom-idp'));
     }
 
     #[Test]
@@ -84,41 +84,91 @@ final class ProviderFieldMapperTest extends TestCase
     }
 
     #[Test]
-    public function throwsExceptionWhenSettingUnknownProvider(): void
+    public function setsOidcIdOnEntity(): void
     {
         $entity = $this->createMockEntity();
 
-        $this->expectException(OAuthException::class);
-        $this->expectExceptionMessage('Unknown provider: twitter');
+        $this->mapper->setProviderId($entity, 'oidc', 'oidc-sub-123');
 
-        $this->mapper->setProviderId($entity, 'twitter', 'twitter-789');
+        self::assertNull($entity->getGoogleId());
+        self::assertNull($entity->getAppleId());
+        self::assertNull($entity->getFacebookId());
+        self::assertSame('oidc-sub-123', $entity->getOidcId());
     }
 
     #[Test]
-    public function getSupportedProvidersReturnsAllProviders(): void
+    public function unknownProviderSetsOidcIdOnEntity(): void
     {
-        $providers = $this->mapper->getSupportedProviders();
+        $entity = $this->createMockEntity();
+
+        $this->mapper->setProviderId($entity, 'keycloak', 'keycloak-user-456');
+
+        self::assertNull($entity->getGoogleId());
+        self::assertNull($entity->getAppleId());
+        self::assertNull($entity->getFacebookId());
+        self::assertSame('keycloak-user-456', $entity->getOidcId());
+    }
+
+    #[Test]
+    public function getsProviderIdFromEntity(): void
+    {
+        $entity = $this->createMockEntity();
+        $entity->setGoogleId('google-123');
+        $entity->setAppleId('apple-456');
+        $entity->setFacebookId('facebook-789');
+        $entity->setOidcId('oidc-sub');
+
+        self::assertSame('google-123', $this->mapper->getProviderId($entity, 'google'));
+        self::assertSame('apple-456', $this->mapper->getProviderId($entity, 'apple'));
+        self::assertSame('facebook-789', $this->mapper->getProviderId($entity, 'facebook'));
+        self::assertSame('oidc-sub', $this->mapper->getProviderId($entity, 'oidc'));
+        self::assertSame('oidc-sub', $this->mapper->getProviderId($entity, 'keycloak'));
+    }
+
+    #[Test]
+    public function getBuiltInProvidersReturnsAllProviders(): void
+    {
+        $providers = $this->mapper->getBuiltInProviders();
 
         self::assertContains('google', $providers);
         self::assertContains('apple', $providers);
         self::assertContains('facebook', $providers);
-        self::assertCount(3, $providers);
+        self::assertContains('oidc', $providers);
+        self::assertCount(4, $providers);
     }
 
     #[Test]
-    public function isSupportedReturnsTrueForKnownProviders(): void
+    public function isBuiltInProviderReturnsTrueForKnownProviders(): void
     {
-        self::assertTrue($this->mapper->isSupported('google'));
-        self::assertTrue($this->mapper->isSupported('apple'));
-        self::assertTrue($this->mapper->isSupported('facebook'));
+        self::assertTrue($this->mapper->isBuiltInProvider('google'));
+        self::assertTrue($this->mapper->isBuiltInProvider('apple'));
+        self::assertTrue($this->mapper->isBuiltInProvider('facebook'));
+        self::assertTrue($this->mapper->isBuiltInProvider('oidc'));
     }
 
     #[Test]
-    public function isSupportedReturnsFalseForUnknownProviders(): void
+    public function isBuiltInProviderReturnsFalseForUnknownProviders(): void
     {
-        self::assertFalse($this->mapper->isSupported('twitter'));
-        self::assertFalse($this->mapper->isSupported('github'));
-        self::assertFalse($this->mapper->isSupported(''));
+        self::assertFalse($this->mapper->isBuiltInProvider('keycloak'));
+        self::assertFalse($this->mapper->isBuiltInProvider('auth0'));
+        self::assertFalse($this->mapper->isBuiltInProvider(''));
+    }
+
+    #[Test]
+    public function usesOidcFieldReturnsTrueForOidcAndCustomProviders(): void
+    {
+        self::assertTrue($this->mapper->usesOidcField('oidc'));
+        self::assertTrue($this->mapper->usesOidcField('keycloak'));
+        self::assertTrue($this->mapper->usesOidcField('auth0'));
+        self::assertTrue($this->mapper->usesOidcField('custom-idp'));
+    }
+
+    #[Test]
+    public function usesOidcFieldReturnsFalseForBuiltInProviders(): void
+    {
+        self::assertFalse($this->mapper->usesOidcField('google'));
+        self::assertFalse($this->mapper->usesOidcField('apple'));
+        self::assertFalse($this->mapper->usesOidcField('facebook'));
     }
 
     private function createMockEntity(): OAuthIdentityInterface

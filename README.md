@@ -1,16 +1,19 @@
 # SyliusHeadlessOAuthBundle
 
-A Symfony bundle that provides headless OAuth authentication for Sylius e-commerce platform via API Platform. Supports Google and Apple Sign-In out of the box.
+A Symfony bundle that provides headless OAuth authentication for Sylius e-commerce platform via API Platform. Supports Google, Apple, Facebook Sign-In, and any OpenID Connect provider (Keycloak, Auth0, Okta, Azure AD, etc.) out of the box.
 
 ## Features
 
 - **Headless authentication** - Pure API-based OAuth flow, perfect for SPAs and mobile apps
 - **Google Sign-In** - Full OAuth 2.0 implementation with userinfo endpoint
 - **Apple Sign-In** - Complete implementation including JWT client secret generation
+- **Facebook Sign-In** - Graph API integration for social login
+- **Generic OpenID Connect** - Support for any OIDC-compliant provider (Keycloak, Auth0, Okta, Azure AD)
 - **Automatic user management** - Finds existing users by provider ID or email, creates new users automatically
 - **Provider linking** - Links OAuth providers to existing accounts found by email
 - **Sylius integration** - Works with Sylius Customer and ShopUser entities
 - **JWT tokens** - Returns JWT tokens via LexikJWTAuthenticationBundle
+- **Admin UI integration** - View connected providers in customer grid and detail pages
 
 ## Requirements
 
@@ -64,6 +67,20 @@ sylius_headless_oauth:
             team_id: '%env(APPLE_TEAM_ID)%'
             key_id: '%env(APPLE_KEY_ID)%'
             private_key_path: '%env(APPLE_PRIVATE_KEY_PATH)%'
+        facebook:
+            enabled: true
+            client_id: '%env(FACEBOOK_CLIENT_ID)%'
+            client_secret: '%env(FACEBOOK_CLIENT_SECRET)%'
+
+        # Generic OIDC providers (Keycloak, Auth0, Okta, etc.)
+        oidc:
+            keycloak:  # Provider name used in API endpoint
+                enabled: true
+                issuer_url: '%env(KEYCLOAK_ISSUER_URL)%'
+                client_id: '%env(KEYCLOAK_CLIENT_ID)%'
+                client_secret: '%env(KEYCLOAK_CLIENT_SECRET)%'
+                verify_jwt: true
+                scopes: 'openid email profile'
 ```
 
 Add environment variables to your `.env`:
@@ -78,6 +95,15 @@ APPLE_CLIENT_ID=com.your.app.id
 APPLE_TEAM_ID=XXXXXXXXXX
 APPLE_KEY_ID=XXXXXXXXXX
 APPLE_PRIVATE_KEY_PATH=%kernel.project_dir%/config/secrets/apple_auth_key.p8
+
+# Facebook Sign-In
+FACEBOOK_CLIENT_ID=your-facebook-app-id
+FACEBOOK_CLIENT_SECRET=your-facebook-app-secret
+
+# Keycloak (or other OIDC provider)
+KEYCLOAK_ISSUER_URL=https://keycloak.example.com/realms/your-realm
+KEYCLOAK_CLIENT_ID=your-keycloak-client-id
+KEYCLOAK_CLIENT_SECRET=your-keycloak-client-secret
 ```
 
 ## Customer Entity Setup
@@ -105,7 +131,9 @@ class Customer extends BaseCustomer implements OAuthIdentityInterface
 The trait automatically adds:
 - `googleId` column (varchar 255, nullable, unique)
 - `appleId` column (varchar 255, nullable, unique)
-- Getters and setters for both fields
+- `facebookId` column (varchar 255, nullable, unique)
+- `oidcId` column (varchar 255, nullable, unique) - for generic OIDC providers
+- Getters and setters for all fields
 
 After adding the trait, create and run a migration:
 
@@ -442,6 +470,10 @@ Before deploying to production:
 
 MIT License. See [LICENSE](LICENSE) for details.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+
 ## Contributing
 
-Contributions are welcome! Please submit pull requests with tests.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to report bugs, submit pull requests, and more.

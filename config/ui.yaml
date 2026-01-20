@@ -1,0 +1,23 @@
+# Sylius UI configuration for OAuth admin integration
+#
+# To use this configuration, import it in your application:
+#
+# In config/packages/sylius_ui.yaml:
+#   imports:
+#       - { resource: '@SyliusHeadlessOAuthBundle/config/ui.yaml' }
+
+sylius_ui:
+    events:
+        # Add OAuth styles to admin layout
+        sylius.admin.layout.stylesheets:
+            blocks:
+                oauth_styles:
+                    template: '@SyliusHeadlessOAuth/Admin/_styles.html.twig'
+                    priority: 0
+
+        # Add OAuth providers block to customer show page
+        sylius.admin.customer.show.after_details:
+            blocks:
+                oauth_providers:
+                    template: '@SyliusHeadlessOAuth/Admin/Customer/_oauth_block.html.twig'
+                    priority: 10

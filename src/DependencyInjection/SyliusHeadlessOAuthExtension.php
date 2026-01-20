@@ -5,13 +5,23 @@ declare(strict_types=1);
 namespace Marac\SyliusHeadlessOAuthBundle\DependencyInjection;
 
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
+use Marac\SyliusHeadlessOAuthBundle\Provider\OpenIdConnectProvider;
+use Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryService;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 
-final class SyliusHeadlessOAuthExtension extends Extension
+final class SyliusHeadlessOAuthExtension extends Extension implements PrependExtensionInterface
 {
+    public function prepend(ContainerBuilder $container): void
+    {
+        $this->prependTwigConfig($container);
+    }
+
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
@@ -39,7 +49,52 @@ final class SyliusHeadlessOAuthExtension extends Extension
         $container->setParameter('sylius_headless_oauth.providers.facebook.client_id', $config['providers']['facebook']['client_id']);
         $container->setParameter('sylius_headless_oauth.providers.facebook.client_secret', $config['providers']['facebook']['client_secret']);
 
+        // Register OIDC providers
+        $this->registerOidcProviders($container, $config['providers']['oidc'] ?? []);
+
         $container->registerForAutoconfiguration(OAuthProviderInterface::class)
             ->addTag('sylius_headless_oauth.provider');
+    }
+
+    /**
+     * @param array<string, array{enabled: bool, issuer_url: string, client_id: string, client_secret: string, verify_jwt: bool, scopes: string, user_identifier_field: string}> $oidcProviders
+     */
+    private function registerOidcProviders(ContainerBuilder $container, array $oidcProviders): void
+    {
+        // Store OIDC provider configurations for later use
+        $container->setParameter('sylius_headless_oauth.providers.oidc', $oidcProviders);
+
+        foreach ($oidcProviders as $name => $providerConfig) {
+            $serviceId = 'sylius_headless_oauth.provider.oidc.' . $name;
+
+            $definition = new Definition(OpenIdConnectProvider::class);
+            $definition->setArguments([
+                new Reference('Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'),
+                new Reference(OidcDiscoveryService::class),
+                $providerConfig['client_id'],
+                $providerConfig['client_secret'],
+                $providerConfig['issuer_url'],
+                $providerConfig['enabled'],
+                $providerConfig['verify_jwt'],
+                $name,
+                $providerConfig['scopes'],
+            ]);
+            $definition->addTag('sylius_headless_oauth.provider');
+
+            $container->setDefinition($serviceId, $definition);
+        }
+    }
+
+    private function prependTwigConfig(ContainerBuilder $container): void
+    {
+        if (!$container->hasExtension('twig')) {
+            return;
+        }
+
+        $container->prependExtensionConfig('twig', [
+            'paths' => [
+                __DIR__ . '/../../templates' => 'SyliusHeadlessOAuth',
+            ],
+        ]);
     }
 }

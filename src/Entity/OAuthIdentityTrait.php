@@ -33,6 +33,14 @@ trait OAuthIdentityTrait
     #[ORM\Column(type: 'string', length: 255, nullable: true, unique: true)]
     private ?string $facebookId = null;
 
+    /**
+     * Generic OIDC provider ID.
+     * Used for custom OIDC providers like Keycloak, Auth0, Okta, etc.
+     * If you need multiple OIDC providers, add additional fields to your Customer entity.
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true, unique: true)]
+    private ?string $oidcId = null;
+
     public function getGoogleId(): ?string
     {
         return $this->googleId;
@@ -61,5 +69,15 @@ trait OAuthIdentityTrait
     public function setFacebookId(?string $facebookId): void
     {
         $this->facebookId = $facebookId;
+    }
+
+    public function getOidcId(): ?string
+    {
+        return $this->oidcId;
+    }
+
+    public function setOidcId(?string $oidcId): void
+    {
+        $this->oidcId = $oidcId;
     }
 }

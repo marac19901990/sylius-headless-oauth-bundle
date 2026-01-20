@@ -1,0 +1,13 @@
+# English translations for Sylius Headless OAuth Bundle
+
+sylius_headless_oauth:
+    ui:
+        oauth: 'OAuth'
+        oauth_providers: 'OAuth Providers'
+        connected: 'Connected'
+        not_connected: 'Not Connected'
+        no_oauth_providers: 'No OAuth providers connected.'
+        provider:
+            google: 'Google'
+            apple: 'Apple'
+            facebook: 'Facebook'

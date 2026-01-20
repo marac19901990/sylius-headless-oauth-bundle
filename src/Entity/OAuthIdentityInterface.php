@@ -17,4 +17,12 @@ interface OAuthIdentityInterface
     public function getFacebookId(): ?string;
 
     public function setFacebookId(?string $facebookId): void;
+
+    /**
+     * Get the OAuth provider ID for a generic OIDC provider.
+     * This is used when configuring custom OIDC providers (Keycloak, Auth0, Okta, etc.)
+     */
+    public function getOidcId(): ?string;
+
+    public function setOidcId(?string $oidcId): void;
 }

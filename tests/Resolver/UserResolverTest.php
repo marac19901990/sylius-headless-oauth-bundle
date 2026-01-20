@@ -342,18 +342,49 @@ class UserResolverTest extends TestCase
         $this->resolver->resolve($userData);
     }
 
-    public function testThrowsExceptionForUnknownProvider(): void
+    public function testUnknownProviderUsesOidcIdField(): void
     {
+        // Unknown providers (like custom OIDC) should fall back to using the oidcId field
         $userData = new OAuthUserData(
-            provider: 'unknown',
-            providerId: 'unknown-123',
-            email: 'test@example.com',
+            provider: 'keycloak',
+            providerId: 'keycloak-user-123',
+            email: 'keycloak-user@example.com',
         );
 
-        $this->expectException(OAuthException::class);
-        $this->expectExceptionMessage('Unknown provider');
+        // Setup: new user flow - not found by provider ID or email
+        $this->customerRepository
+            ->method('findOneBy')
+            ->willReturn(null);
 
-        $this->resolver->resolve($userData);
+        // Create a mock that implements both interfaces
+        $customer = $this->createMock(CustomerWithOAuth::class);
+
+        // Track what values are set
+        $oidcIdSet = null;
+
+        $customer->method('getUser')->willReturn(null);
+        $customer->method('setOidcId')->willReturnCallback(function ($id) use (&$oidcIdSet): void {
+            $oidcIdSet = $id;
+        });
+
+        $this->customerFactory
+            ->method('createNew')
+            ->willReturn($customer);
+
+        $shopUser = $this->createMock(ShopUserInterface::class);
+        $shopUser->method('setUsername')->willReturnSelf();
+        $shopUser->method('setPlainPassword')->willReturnSelf();
+        $shopUser->method('setEnabled')->willReturnSelf();
+
+        $this->shopUserFactory
+            ->method('createNew')
+            ->willReturn($shopUser);
+
+        $result = $this->resolver->resolve($userData);
+
+        // Verify the oidcId field was set (unknown providers fall back to oidcId)
+        self::assertSame('keycloak-user-123', $oidcIdSet);
+        self::assertTrue($result->isNewUser);
     }
 
     public function testThrowsExceptionWhenCustomerDoesNotImplementInterface(): void
