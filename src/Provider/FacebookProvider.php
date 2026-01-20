@@ -6,6 +6,7 @@ namespace Marac\SyliusHeadlessOAuthBundle\Provider;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use JsonException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
@@ -122,9 +123,11 @@ final class FacebookProvider implements ConfigurableOAuthProviderInterface, Refr
                 tokenType: $data['token_type'] ?? null,
             );
         } catch (GuzzleException $e) {
-            throw new OAuthException('Failed to refresh Facebook tokens: ' . $e->getMessage(), 0, $e);
+            $statusCode = $e instanceof RequestException ? ($e->getResponse()?->getStatusCode() ?? 400) : 400;
+
+            throw new OAuthException('Failed to refresh Facebook tokens: ' . $e->getMessage(), $statusCode, $e);
         } catch (JsonException $e) {
-            throw new OAuthException('Failed to parse Facebook refresh response: ' . $e->getMessage(), 0, $e);
+            throw new OAuthException('Failed to parse Facebook refresh response: ' . $e->getMessage(), 400, $e);
         }
     }
 
@@ -160,9 +163,11 @@ final class FacebookProvider implements ConfigurableOAuthProviderInterface, Refr
 
             return $data;
         } catch (GuzzleException $e) {
-            throw new OAuthException('Failed to exchange Facebook authorization code: ' . $e->getMessage(), 0, $e);
+            $statusCode = $e instanceof RequestException ? ($e->getResponse()?->getStatusCode() ?? 400) : 400;
+
+            throw new OAuthException('Failed to exchange Facebook authorization code: ' . $e->getMessage(), $statusCode, $e);
         } catch (JsonException $e) {
-            throw new OAuthException('Failed to parse Facebook token response: ' . $e->getMessage(), 0, $e);
+            throw new OAuthException('Failed to parse Facebook token response: ' . $e->getMessage(), 400, $e);
         }
     }
 
@@ -187,9 +192,11 @@ final class FacebookProvider implements ConfigurableOAuthProviderInterface, Refr
 
             return $data;
         } catch (GuzzleException $e) {
-            throw new OAuthException('Failed to fetch Facebook user info: ' . $e->getMessage(), 0, $e);
+            $statusCode = $e instanceof RequestException ? ($e->getResponse()?->getStatusCode() ?? 400) : 400;
+
+            throw new OAuthException('Failed to fetch Facebook user info: ' . $e->getMessage(), $statusCode, $e);
         } catch (JsonException $e) {
-            throw new OAuthException('Failed to parse Facebook user info response: ' . $e->getMessage(), 0, $e);
+            throw new OAuthException('Failed to parse Facebook user info response: ' . $e->getMessage(), 400, $e);
         }
     }
 }

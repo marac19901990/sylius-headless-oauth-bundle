@@ -6,6 +6,7 @@ namespace Marac\SyliusHeadlessOAuthBundle\Provider;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use JsonException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInterface;
@@ -162,9 +163,11 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
                 idToken: $data['id_token'] ?? null,
             );
         } catch (GuzzleException $e) {
-            throw new OAuthException('Failed to refresh Apple tokens: ' . $e->getMessage(), 0, $e);
+            $statusCode = $e instanceof RequestException ? ($e->getResponse()?->getStatusCode() ?? 400) : 400;
+
+            throw new OAuthException('Failed to refresh Apple tokens: ' . $e->getMessage(), $statusCode, $e);
         } catch (JsonException $e) {
-            throw new OAuthException('Failed to parse Apple refresh response: ' . $e->getMessage(), 0, $e);
+            throw new OAuthException('Failed to parse Apple refresh response: ' . $e->getMessage(), 400, $e);
         }
     }
 
@@ -204,9 +207,11 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
 
             return $data;
         } catch (GuzzleException $e) {
-            throw new OAuthException('Failed to exchange Apple authorization code: ' . $e->getMessage(), 0, $e);
+            $statusCode = $e instanceof RequestException ? ($e->getResponse()?->getStatusCode() ?? 400) : 400;
+
+            throw new OAuthException('Failed to exchange Apple authorization code: ' . $e->getMessage(), $statusCode, $e);
         } catch (JsonException $e) {
-            throw new OAuthException('Failed to parse Apple token response: ' . $e->getMessage(), 0, $e);
+            throw new OAuthException('Failed to parse Apple token response: ' . $e->getMessage(), 400, $e);
         }
     }
 
