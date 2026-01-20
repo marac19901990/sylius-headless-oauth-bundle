@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Resolver;
 
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
+use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPreUserCreateEvent;
+use Marac\SyliusHeadlessOAuthBundle\Event\OAuthProviderLinkedEvent;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper;
@@ -13,6 +16,7 @@ use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 use function sprintf;
 
@@ -34,18 +38,22 @@ final class UserResolver implements UserResolverInterface
         private readonly FactoryInterface $customerFactory,
         private readonly FactoryInterface $shopUserFactory,
         private readonly EntityManagerInterface $entityManager,
+        private readonly ?EventDispatcherInterface $eventDispatcher = null,
         ?ProviderFieldMapper $fieldMapper = null,
     ) {
         $this->fieldMapper = $fieldMapper ?? new ProviderFieldMapper();
     }
 
-    public function resolve(OAuthUserData $userData): ShopUserInterface
+    public function resolve(OAuthUserData $userData): UserResolveResult
     {
         // 1. Try to find by provider ID
         $customer = $this->findByProviderId($userData->provider, $userData->providerId);
 
         if ($customer !== null) {
-            return $this->getOrCreateShopUser($customer, $userData);
+            return new UserResolveResult(
+                shopUser: $this->getOrCreateShopUser($customer, $userData),
+                isNewUser: false,
+            );
         }
 
         // 2. Try to find by email
@@ -55,11 +63,17 @@ final class UserResolver implements UserResolverInterface
             // 3. Link provider ID to existing customer
             $this->linkProviderToCustomer($customer, $userData);
 
-            return $this->getOrCreateShopUser($customer, $userData);
+            return new UserResolveResult(
+                shopUser: $this->getOrCreateShopUser($customer, $userData),
+                isNewUser: false,
+            );
         }
 
         // 4. Create new Customer + ShopUser
-        return $this->createNewUser($userData);
+        return new UserResolveResult(
+            shopUser: $this->createNewUser($userData),
+            isNewUser: true,
+        );
     }
 
     private function findByProviderId(string $provider, string $providerId): ?CustomerInterface
@@ -89,6 +103,12 @@ final class UserResolver implements UserResolverInterface
         }
 
         $this->entityManager->flush();
+
+        // Dispatch event for provider linking
+        $this->eventDispatcher?->dispatch(
+            new OAuthProviderLinkedEvent($customer, $userData->provider, $userData->providerId),
+            OAuthProviderLinkedEvent::NAME,
+        );
     }
 
     private function getOrCreateShopUser(CustomerInterface $customer, OAuthUserData $userData): ShopUserInterface
@@ -106,6 +126,9 @@ final class UserResolver implements UserResolverInterface
         $shopUser->setUsername($userData->email);
         $shopUser->setEnabled(true);
 
+        // Mark as verified since OAuth providers have already verified the email
+        $shopUser->setVerifiedAt(new DateTime());
+
         // Generate a random password since OAuth users don't need one
         $shopUser->setPlainPassword(bin2hex(random_bytes(16)));
 
@@ -117,6 +140,10 @@ final class UserResolver implements UserResolverInterface
 
     private function createNewUser(OAuthUserData $userData): ShopUserInterface
     {
+        // Dispatch pre-create event
+        $event = new OAuthPreUserCreateEvent($userData);
+        $this->eventDispatcher?->dispatch($event, OAuthPreUserCreateEvent::NAME);
+
         /** @var CustomerInterface&OAuthIdentityInterface $customer */
         $customer = $this->customerFactory->createNew();
 
@@ -139,6 +166,9 @@ final class UserResolver implements UserResolverInterface
         $shopUser->setCustomer($customer);
         $shopUser->setUsername($userData->email);
         $shopUser->setEnabled(true);
+
+        // Mark as verified since OAuth providers have already verified the email
+        $shopUser->setVerifiedAt(new DateTime());
 
         // Generate a random password since OAuth users don't need one
         $shopUser->setPlainPassword(bin2hex(random_bytes(16)));

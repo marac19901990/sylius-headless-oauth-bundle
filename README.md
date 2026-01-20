@@ -135,7 +135,7 @@ Exchange an OAuth authorization code for a JWT token.
 ```json
 {
     "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
-    "refreshToken": null,
+    "refreshToken": "1//0eXXXXXXXXXXXX",
     "customerId": 123
 }
 ```
@@ -165,6 +165,31 @@ curl -X POST https://your-sylius-shop.com/api/v2/auth/oauth/apple \
     "redirectUri": "https://your-app.com/oauth/callback"
   }'
 ```
+
+### POST /api/v2/auth/oauth/refresh/{provider}
+
+Refresh an expired JWT token using the OAuth refresh token.
+
+**URL Parameters:**
+- `provider` - The OAuth provider name (`google` or `apple`)
+
+**Request Body:**
+```json
+{
+    "refreshToken": "1//0eXXXXXXXXXXXX"
+}
+```
+
+**Success Response (200):**
+```json
+{
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
+    "refreshToken": "1//0eNewRefreshToken",
+    "customerId": 123
+}
+```
+
+**Note:** Google typically reuses the same refresh token. Apple may rotate refresh tokens on each use.
 
 ## Frontend Integration
 
@@ -197,6 +222,8 @@ curl -X POST https://your-sylius-shop.com/api/v2/auth/oauth/apple \
 - Generate a private key (.p8 file) for JWT signing
 - **Important:** Apple only sends the user's name on the **first** authorization. After that, only email and Apple ID are provided. The bundle captures the name on first login.
 - The bundle automatically generates the required JWT client secret using your private key
+- **Email is required:** The bundle requires an email address from the OAuth provider. If a user selects Apple's "Hide My Email" option, Apple provides a private relay email (e.g., `xyz@privaterelay.appleid.com`) which works normally. If no email is returned (extremely rare), authentication fails with a clear error: `"Apple id_token missing required claim: email"`.
+- **Caching:** Apple's JWKS (public keys for JWT verification) are cached for 24 hours to minimize network calls. Client secrets are generated fresh per request as the cryptographic overhead is negligible (~1-5ms).
 
 ## How It Works
 
@@ -256,6 +283,78 @@ services:
 ```
 
 3. Add the provider ID field to your Customer entity and update `UserResolver` accordingly.
+
+## Events
+
+The bundle dispatches Symfony events at key points in the OAuth flow, allowing you to hook into the process.
+
+### Available Events
+
+| Event | When Dispatched | Use Case |
+|-------|-----------------|----------|
+| `sylius.headless_oauth.pre_user_create` | Before creating a new user | Modify user data, add custom fields |
+| `sylius.headless_oauth.post_authentication` | After successful auth | Cart merging, analytics, welcome emails |
+| `sylius.headless_oauth.provider_linked` | When provider linked to existing account | Notifications, audit logging |
+
+### Example: Cart Merging on Login
+
+```php
+<?php
+
+namespace App\EventSubscriber;
+
+use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPostAuthenticationEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+class OAuthCartMergeSubscriber implements EventSubscriberInterface
+{
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            OAuthPostAuthenticationEvent::NAME => 'onPostAuthentication',
+        ];
+    }
+
+    public function onPostAuthentication(OAuthPostAuthenticationEvent $event): void
+    {
+        // Merge anonymous cart with user's cart
+        $shopUser = $event->shopUser;
+        $isNewUser = $event->isNewUser;
+
+        // ... your cart merging logic
+    }
+}
+```
+
+### Example: Welcome Email for New Users
+
+```php
+<?php
+
+namespace App\EventSubscriber;
+
+use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPostAuthenticationEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+class WelcomeEmailSubscriber implements EventSubscriberInterface
+{
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            OAuthPostAuthenticationEvent::NAME => 'onPostAuthentication',
+        ];
+    }
+
+    public function onPostAuthentication(OAuthPostAuthenticationEvent $event): void
+    {
+        if ($event->isNewUser) {
+            // Send welcome email to new OAuth users
+            $email = $event->userData->email;
+            // ... send email
+        }
+    }
+}
+```
 
 ## Security
 

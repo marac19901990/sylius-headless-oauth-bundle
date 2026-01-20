@@ -17,6 +17,7 @@ use Marac\SyliusHeadlessOAuthBundle\Processor\OAuthProcessor;
 use Marac\SyliusHeadlessOAuthBundle\Processor\OAuthRefreshProcessor;
 use Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -82,6 +83,8 @@ final class FullOAuthFlowTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn($customer);
 
+        $resolveResult = new UserResolveResult($shopUser, true);
+
         $this->userResolver
             ->expects($this->once())
             ->method('resolve')
@@ -93,7 +96,7 @@ final class FullOAuthFlowTest extends TestCase
                     && $userData->lastName === 'Test'
                     && $userData->refreshToken === 'google-refresh-token-456';
             }))
-            ->willReturn($shopUser);
+            ->willReturn($resolveResult);
 
         $this->jwtManager
             ->expects($this->once())
@@ -161,10 +164,12 @@ final class FullOAuthFlowTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn($customer);
 
+        $resolveResult = new UserResolveResult($shopUser, false);
+
         $this->userResolver
             ->expects($this->once())
             ->method('resolve')
-            ->willReturn($shopUser);
+            ->willReturn($resolveResult);
 
         $this->jwtManager
             ->expects($this->once())
@@ -225,7 +230,8 @@ final class FullOAuthFlowTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn(null);
 
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $resolveResult = new UserResolveResult($shopUser, false);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('token');
 
         // Create processor with multiple providers

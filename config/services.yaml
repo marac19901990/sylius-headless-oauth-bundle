@@ -73,6 +73,7 @@ services:
             $customerFactory: '@sylius.factory.customer'
             $shopUserFactory: '@sylius.factory.shop_user'
             $entityManager: '@doctrine.orm.entity_manager'
+            $eventDispatcher: '@event_dispatcher'
 
     # OAuth Processor (API Platform)
     Marac\SyliusHeadlessOAuthBundle\Processor\OAuthProcessor:
@@ -82,6 +83,7 @@ services:
             $jwtManager: '@lexik_jwt_authentication.jwt_manager'
             $redirectUriValidator: '@Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidator'
             $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger'
+            $eventDispatcher: '@event_dispatcher'
         tags:
             - { name: 'api_platform.state_processor' }
 

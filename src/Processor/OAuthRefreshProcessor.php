@@ -61,8 +61,9 @@ final class OAuthRefreshProcessor implements ProcessorInterface
             $userData = $provider->getUserDataFromTokenData($tokenData);
 
             // Resolve the user (should already exist since they had a refresh token)
-            $shopUser = $this->userResolver->resolve($userData);
+            $resolveResult = $this->userResolver->resolve($userData);
 
+            $shopUser = $resolveResult->shopUser;
             $token = $this->jwtManager->create($shopUser);
             $customerId = $shopUser->getCustomer()?->getId();
 
@@ -79,18 +80,21 @@ final class OAuthRefreshProcessor implements ProcessorInterface
                 $providerName,
                 'Provider not supported',
             );
+
             throw $e;
         } catch (OAuthException $e) {
             $this->securityLogger?->logRefreshFailure(
                 $providerName,
                 $e->getMessage(),
             );
+
             throw $e;
         } catch (Throwable $e) {
             $this->securityLogger?->logRefreshFailure(
                 $providerName,
                 'Unexpected error: ' . $e->getMessage(),
             );
+
             throw $e;
         }
     }

@@ -15,6 +15,7 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\RefreshableOAuthProviderInterface;
+use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -53,7 +54,8 @@ class OAuthRefreshProcessorTest extends TestCase
         $provider->method('getUserDataFromTokenData')->with($tokenData)->willReturn($userData);
 
         $shopUser = $this->createMockShopUser(123);
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $resolveResult = new UserResolveResult($shopUser, false);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('new-jwt-token');
 
         $processor = new OAuthRefreshProcessor(
@@ -99,7 +101,8 @@ class OAuthRefreshProcessorTest extends TestCase
         $provider->method('getUserDataFromTokenData')->with($tokenData)->willReturn($userData);
 
         $shopUser = $this->createMockShopUser(456);
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $resolveResult = new UserResolveResult($shopUser, false);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('apple-jwt-token');
 
         $processor = new OAuthRefreshProcessor(
@@ -145,7 +148,8 @@ class OAuthRefreshProcessorTest extends TestCase
         $provider->method('getUserDataFromTokenData')->willReturn($userData);
 
         $shopUser = $this->createMockShopUser(456);
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $resolveResult = new UserResolveResult($shopUser, false);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('new-jwt-token');
 
         $processor = new OAuthRefreshProcessor(
@@ -308,7 +312,8 @@ class OAuthRefreshProcessorTest extends TestCase
         $provider->method('getUserDataFromTokenData')->willReturn($userData);
 
         $shopUser = $this->createMockShopUser(789);
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $resolveResult = new UserResolveResult($shopUser, false);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('jwt-token');
 
         $processor = new OAuthRefreshProcessor(
@@ -351,7 +356,8 @@ class OAuthRefreshProcessorTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn(null);
 
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $resolveResult = new UserResolveResult($shopUser, false);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('jwt-token');
 
         $processor = new OAuthRefreshProcessor(
@@ -399,7 +405,8 @@ class OAuthRefreshProcessorTest extends TestCase
         $appleProvider->method('getUserDataFromTokenData')->willReturn($appleUserData);
 
         $shopUser = $this->createMockShopUser(111);
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $resolveResult = new UserResolveResult($shopUser, false);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('jwt-token');
 
         $processor = new OAuthRefreshProcessor(

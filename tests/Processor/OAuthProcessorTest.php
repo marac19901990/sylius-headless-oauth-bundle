@@ -9,15 +9,18 @@ use ApiPlatform\Metadata\Post;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Api\Resource\OAuthRequest;
 use Marac\SyliusHeadlessOAuthBundle\Api\Response\OAuthResponse;
+use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPostAuthenticationEvent;
 use Marac\SyliusHeadlessOAuthBundle\Exception\ProviderNotSupportedException;
 use Marac\SyliusHeadlessOAuthBundle\Processor\OAuthProcessor;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
+use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class OAuthProcessorTest extends TestCase
 {
@@ -25,6 +28,7 @@ class OAuthProcessorTest extends TestCase
     private OAuthProviderInterface&MockObject $appleProvider;
     private UserResolverInterface&MockObject $userResolver;
     private JWTTokenManagerInterface&MockObject $jwtManager;
+    private EventDispatcherInterface&MockObject $eventDispatcher;
     private OAuthProcessor $processor;
     private Operation $operation;
 
@@ -34,6 +38,7 @@ class OAuthProcessorTest extends TestCase
         $this->appleProvider = $this->createMock(OAuthProviderInterface::class);
         $this->userResolver = $this->createMock(UserResolverInterface::class);
         $this->jwtManager = $this->createMock(JWTTokenManagerInterface::class);
+        $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         // Configure provider supports() methods
         $this->googleProvider->method('supports')
@@ -45,6 +50,7 @@ class OAuthProcessorTest extends TestCase
             providers: [$this->googleProvider, $this->appleProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            eventDispatcher: $this->eventDispatcher,
         );
 
         $this->operation = new Post();
@@ -70,6 +76,8 @@ class OAuthProcessorTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn($customer);
 
+        $resolveResult = new UserResolveResult($shopUser, false);
+
         $this->googleProvider
             ->expects($this->once())
             ->method('getUserData')
@@ -80,7 +88,7 @@ class OAuthProcessorTest extends TestCase
             ->expects($this->once())
             ->method('resolve')
             ->with($userData)
-            ->willReturn($shopUser);
+            ->willReturn($resolveResult);
 
         $this->jwtManager
             ->expects($this->once())
@@ -118,6 +126,8 @@ class OAuthProcessorTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn($customer);
 
+        $resolveResult = new UserResolveResult($shopUser, true);
+
         $this->appleProvider
             ->expects($this->once())
             ->method('getUserData')
@@ -128,7 +138,7 @@ class OAuthProcessorTest extends TestCase
             ->expects($this->once())
             ->method('resolve')
             ->with($userData)
-            ->willReturn($shopUser);
+            ->willReturn($resolveResult);
 
         $this->jwtManager
             ->expects($this->once())
@@ -208,12 +218,14 @@ class OAuthProcessorTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn(null);
 
+        $resolveResult = new UserResolveResult($shopUser, false);
+
         $this->googleProvider
             ->expects($this->once())
             ->method('getUserData')
             ->willReturn($userData);
 
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('token');
 
         // Test with uppercase GOOGLE
@@ -244,8 +256,10 @@ class OAuthProcessorTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn($customer);
 
+        $resolveResult = new UserResolveResult($shopUser, true);
+
         $this->googleProvider->method('getUserData')->willReturn($userData);
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('token');
 
         $response = $this->processor->process(
@@ -272,8 +286,10 @@ class OAuthProcessorTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn(null);
 
+        $resolveResult = new UserResolveResult($shopUser, false);
+
         $this->googleProvider->method('getUserData')->willReturn($userData);
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('token');
 
         $response = $this->processor->process(
@@ -300,6 +316,8 @@ class OAuthProcessorTest extends TestCase
         $shopUser = $this->createMock(ShopUserInterface::class);
         $shopUser->method('getCustomer')->willReturn(null);
 
+        $resolveResult = new UserResolveResult($shopUser, false);
+
         // Google provider should NOT be called
         $this->googleProvider
             ->expects($this->never())
@@ -311,7 +329,7 @@ class OAuthProcessorTest extends TestCase
             ->method('getUserData')
             ->willReturn($userData);
 
-        $this->userResolver->method('resolve')->willReturn($shopUser);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
         $this->jwtManager->method('create')->willReturn('token');
 
         $this->processor->process(
@@ -319,5 +337,124 @@ class OAuthProcessorTest extends TestCase
             operation: $this->operation,
             uriVariables: ['provider' => 'apple'],
         );
+    }
+
+    public function testDispatchesPostAuthenticationEventForNewUser(): void
+    {
+        $request = new OAuthRequest();
+        $request->code = 'google-auth-code';
+        $request->redirectUri = 'https://example.com/callback';
+
+        $userData = new OAuthUserData(
+            provider: 'google',
+            providerId: 'google-new-user',
+            email: 'newuser@gmail.com',
+        );
+
+        $shopUser = $this->createMock(ShopUserInterface::class);
+        $shopUser->method('getCustomer')->willReturn(null);
+
+        $resolveResult = new UserResolveResult($shopUser, true);
+
+        $this->googleProvider->method('getUserData')->willReturn($userData);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
+        $this->jwtManager->method('create')->willReturn('token');
+
+        $this->eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                $this->callback(function ($event) use ($shopUser, $userData) {
+                    return $event instanceof OAuthPostAuthenticationEvent
+                        && $event->shopUser === $shopUser
+                        && $event->userData === $userData
+                        && $event->isNewUser === true;
+                }),
+                OAuthPostAuthenticationEvent::NAME,
+            );
+
+        $this->processor->process(
+            data: $request,
+            operation: $this->operation,
+            uriVariables: ['provider' => 'google'],
+        );
+    }
+
+    public function testDispatchesPostAuthenticationEventForExistingUser(): void
+    {
+        $request = new OAuthRequest();
+        $request->code = 'google-auth-code';
+        $request->redirectUri = 'https://example.com/callback';
+
+        $userData = new OAuthUserData(
+            provider: 'google',
+            providerId: 'google-existing-user',
+            email: 'existing@gmail.com',
+        );
+
+        $shopUser = $this->createMock(ShopUserInterface::class);
+        $shopUser->method('getCustomer')->willReturn(null);
+
+        $resolveResult = new UserResolveResult($shopUser, false);
+
+        $this->googleProvider->method('getUserData')->willReturn($userData);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
+        $this->jwtManager->method('create')->willReturn('token');
+
+        $this->eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                $this->callback(function ($event) {
+                    return $event instanceof OAuthPostAuthenticationEvent
+                        && $event->isNewUser === false;
+                }),
+                OAuthPostAuthenticationEvent::NAME,
+            );
+
+        $this->processor->process(
+            data: $request,
+            operation: $this->operation,
+            uriVariables: ['provider' => 'google'],
+        );
+    }
+
+    public function testWorksWithoutEventDispatcher(): void
+    {
+        // Create processor without event dispatcher
+        $processor = new OAuthProcessor(
+            providers: [$this->googleProvider],
+            userResolver: $this->userResolver,
+            jwtManager: $this->jwtManager,
+            eventDispatcher: null,
+        );
+
+        $request = new OAuthRequest();
+        $request->code = 'google-auth-code';
+        $request->redirectUri = 'https://example.com/callback';
+
+        $userData = new OAuthUserData(
+            provider: 'google',
+            providerId: 'google-no-dispatcher',
+            email: 'nodispatcher@gmail.com',
+        );
+
+        $shopUser = $this->createMock(ShopUserInterface::class);
+        $shopUser->method('getCustomer')->willReturn(null);
+
+        $resolveResult = new UserResolveResult($shopUser, true);
+
+        $this->googleProvider->method('getUserData')->willReturn($userData);
+        $this->userResolver->method('resolve')->willReturn($resolveResult);
+        $this->jwtManager->method('create')->willReturn('token');
+
+        // Should not throw even without event dispatcher
+        $response = $processor->process(
+            data: $request,
+            operation: $this->operation,
+            uriVariables: ['provider' => 'google'],
+        );
+
+        $this->assertInstanceOf(OAuthResponse::class, $response);
     }
 }

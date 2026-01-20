@@ -9,12 +9,14 @@ use ApiPlatform\State\ProcessorInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Api\Resource\OAuthRequest;
 use Marac\SyliusHeadlessOAuthBundle\Api\Response\OAuthResponse;
+use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPostAuthenticationEvent;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\ProviderNotSupportedException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
 use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger;
 use Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidator;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Throwable;
 
 /**
@@ -40,6 +42,7 @@ final class OAuthProcessor implements ProcessorInterface
         private readonly JWTTokenManagerInterface $jwtManager,
         private readonly ?RedirectUriValidator $redirectUriValidator = null,
         private readonly ?OAuthSecurityLogger $securityLogger = null,
+        private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
     }
 
@@ -57,6 +60,7 @@ final class OAuthProcessor implements ProcessorInterface
                 $this->redirectUriValidator->validate($data->redirectUri);
             } catch (OAuthException $e) {
                 $this->securityLogger?->logRedirectUriRejected($data->redirectUri, $providerName);
+
                 throw $e;
             }
         }
@@ -64,10 +68,17 @@ final class OAuthProcessor implements ProcessorInterface
         try {
             $provider = $this->findProvider($providerName);
             $userData = $provider->getUserData($data->code, $data->redirectUri);
-            $shopUser = $this->userResolver->resolve($userData);
+            $resolveResult = $this->userResolver->resolve($userData);
 
+            $shopUser = $resolveResult->shopUser;
             $token = $this->jwtManager->create($shopUser);
             $customerId = $shopUser->getCustomer()?->getId();
+
+            // Dispatch post-authentication event
+            $this->eventDispatcher?->dispatch(
+                new OAuthPostAuthenticationEvent($shopUser, $userData, $resolveResult->isNewUser),
+                OAuthPostAuthenticationEvent::NAME,
+            );
 
             // Log successful authentication
             $this->securityLogger?->logAuthSuccess(
@@ -87,18 +98,21 @@ final class OAuthProcessor implements ProcessorInterface
                 $providerName,
                 'Provider not supported',
             );
+
             throw $e;
         } catch (OAuthException $e) {
             $this->securityLogger?->logAuthFailure(
                 $providerName,
                 $e->getMessage(),
             );
+
             throw $e;
         } catch (Throwable $e) {
             $this->securityLogger?->logAuthFailure(
                 $providerName,
                 'Unexpected error: ' . $e->getMessage(),
             );
+
             throw $e;
         }
     }

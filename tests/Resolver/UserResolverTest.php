@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Tests\Resolver;
 
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
+use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPreUserCreateEvent;
+use Marac\SyliusHeadlessOAuthBundle\Event\OAuthProviderLinkedEvent;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver;
+use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class UserResolverTest extends TestCase
 {
@@ -22,6 +27,7 @@ class UserResolverTest extends TestCase
     private FactoryInterface&MockObject $customerFactory;
     private FactoryInterface&MockObject $shopUserFactory;
     private EntityManagerInterface&MockObject $entityManager;
+    private EventDispatcherInterface&MockObject $eventDispatcher;
     private UserResolver $resolver;
 
     protected function setUp(): void
@@ -30,12 +36,14 @@ class UserResolverTest extends TestCase
         $this->customerFactory = $this->createMock(FactoryInterface::class);
         $this->shopUserFactory = $this->createMock(FactoryInterface::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $this->resolver = new UserResolver(
             customerRepository: $this->customerRepository,
             customerFactory: $this->customerFactory,
             shopUserFactory: $this->shopUserFactory,
             entityManager: $this->entityManager,
+            eventDispatcher: $this->eventDispatcher,
         );
     }
 
@@ -61,7 +69,9 @@ class UserResolverTest extends TestCase
 
         $result = $this->resolver->resolve($userData);
 
-        $this->assertSame($shopUser, $result);
+        $this->assertInstanceOf(UserResolveResult::class, $result);
+        $this->assertSame($shopUser, $result->shopUser);
+        $this->assertFalse($result->isNewUser);
     }
 
     public function testFindsExistingUserByAppleId(): void
@@ -84,7 +94,9 @@ class UserResolverTest extends TestCase
 
         $result = $this->resolver->resolve($userData);
 
-        $this->assertSame($shopUser, $result);
+        $this->assertInstanceOf(UserResolveResult::class, $result);
+        $this->assertSame($shopUser, $result->shopUser);
+        $this->assertFalse($result->isNewUser);
     }
 
     public function testLinksProviderToExistingCustomerFoundByEmail(): void
@@ -127,9 +139,20 @@ class UserResolverTest extends TestCase
             ->expects($this->once())
             ->method('flush');
 
+        // Expect provider linked event to be dispatched
+        $this->eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                $this->isInstanceOf(OAuthProviderLinkedEvent::class),
+                OAuthProviderLinkedEvent::NAME,
+            );
+
         $result = $this->resolver->resolve($userData);
 
-        $this->assertSame($shopUser, $result);
+        $this->assertInstanceOf(UserResolveResult::class, $result);
+        $this->assertSame($shopUser, $result->shopUser);
+        $this->assertFalse($result->isNewUser);
     }
 
     public function testCreatesNewCustomerAndShopUser(): void
@@ -170,7 +193,17 @@ class UserResolverTest extends TestCase
         $newShopUser->expects($this->once())->method('setCustomer')->with($newCustomer);
         $newShopUser->expects($this->once())->method('setUsername')->with('newuser@example.com');
         $newShopUser->expects($this->once())->method('setEnabled')->with(true);
+        $newShopUser->expects($this->once())->method('setVerifiedAt')->with($this->isInstanceOf(DateTime::class));
         $newShopUser->expects($this->once())->method('setPlainPassword')->with($this->isType('string'));
+
+        // Expect pre-create event to be dispatched
+        $this->eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                $this->isInstanceOf(OAuthPreUserCreateEvent::class),
+                OAuthPreUserCreateEvent::NAME,
+            );
 
         // Expect persistence
         $this->entityManager->expects($this->exactly(2))->method('persist');
@@ -178,7 +211,9 @@ class UserResolverTest extends TestCase
 
         $result = $this->resolver->resolve($userData);
 
-        $this->assertSame($newShopUser, $result);
+        $this->assertInstanceOf(UserResolveResult::class, $result);
+        $this->assertSame($newShopUser, $result->shopUser);
+        $this->assertTrue($result->isNewUser);
     }
 
     public function testCreatesShopUserForCustomerWithoutUser(): void
@@ -208,13 +243,16 @@ class UserResolverTest extends TestCase
         $newShopUser->expects($this->once())->method('setCustomer')->with($customer);
         $newShopUser->expects($this->once())->method('setUsername')->with('customeronly@example.com');
         $newShopUser->expects($this->once())->method('setEnabled')->with(true);
+        $newShopUser->expects($this->once())->method('setVerifiedAt')->with($this->isInstanceOf(DateTime::class));
 
         $this->entityManager->expects($this->once())->method('persist')->with($newShopUser);
         $this->entityManager->expects($this->once())->method('flush');
 
         $result = $this->resolver->resolve($userData);
 
-        $this->assertSame($newShopUser, $result);
+        $this->assertInstanceOf(UserResolveResult::class, $result);
+        $this->assertSame($newShopUser, $result->shopUser);
+        $this->assertFalse($result->isNewUser);
     }
 
     public function testUpdatesNameOnFirstAppleLogin(): void
@@ -252,9 +290,20 @@ class UserResolverTest extends TestCase
         $customer->expects($this->once())->method('setLastName')->with('Timer');
         $customer->expects($this->once())->method('setAppleId')->with('apple-first-login');
 
+        // Provider linked event should be dispatched
+        $this->eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                $this->isInstanceOf(OAuthProviderLinkedEvent::class),
+                OAuthProviderLinkedEvent::NAME,
+            );
+
         $result = $this->resolver->resolve($userData);
 
-        $this->assertSame($shopUser, $result);
+        $this->assertInstanceOf(UserResolveResult::class, $result);
+        $this->assertSame($shopUser, $result->shopUser);
+        $this->assertFalse($result->isNewUser);
     }
 
     public function testDoesNotOverwriteExistingName(): void
@@ -336,6 +385,143 @@ class UserResolverTest extends TestCase
         $this->expectExceptionMessage('must implement');
 
         $this->resolver->resolve($userData);
+    }
+
+    public function testSetsVerifiedAtOnNewUser(): void
+    {
+        $userData = new OAuthUserData(
+            provider: 'google',
+            providerId: 'google-verified-test',
+            email: 'verified@example.com',
+            firstName: 'Verified',
+            lastName: 'User',
+        );
+
+        $this->customerRepository->method('findOneBy')->willReturn(null);
+
+        $newCustomer = $this->createCustomerWithOAuthMock();
+        $newShopUser = $this->createMock(ShopUserInterface::class);
+
+        $this->customerFactory->method('createNew')->willReturn($newCustomer);
+        $this->shopUserFactory->method('createNew')->willReturn($newShopUser);
+
+        // The key assertion: setVerifiedAt should be called with a DateTime
+        $newShopUser
+            ->expects($this->once())
+            ->method('setVerifiedAt')
+            ->with($this->callback(function ($dateTime) {
+                return $dateTime instanceof DateTime
+                    && abs($dateTime->getTimestamp() - time()) < 5; // Within 5 seconds
+            }));
+
+        $this->resolver->resolve($userData);
+    }
+
+    public function testDispatchesPreUserCreateEventWithUserData(): void
+    {
+        $userData = new OAuthUserData(
+            provider: 'google',
+            providerId: 'google-event-test',
+            email: 'event@example.com',
+            firstName: 'Event',
+            lastName: 'Test',
+        );
+
+        $this->customerRepository->method('findOneBy')->willReturn(null);
+
+        $newCustomer = $this->createCustomerWithOAuthMock();
+        $newShopUser = $this->createMock(ShopUserInterface::class);
+
+        $this->customerFactory->method('createNew')->willReturn($newCustomer);
+        $this->shopUserFactory->method('createNew')->willReturn($newShopUser);
+
+        $this->eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                $this->callback(function ($event) use ($userData) {
+                    return $event instanceof OAuthPreUserCreateEvent
+                        && $event->userData === $userData;
+                }),
+                OAuthPreUserCreateEvent::NAME,
+            );
+
+        $this->resolver->resolve($userData);
+    }
+
+    public function testDispatchesProviderLinkedEventWithCorrectData(): void
+    {
+        $userData = new OAuthUserData(
+            provider: 'google',
+            providerId: 'google-link-test',
+            email: 'link@example.com',
+        );
+
+        $shopUser = $this->createMock(ShopUserInterface::class);
+        $customer = $this->createCustomerWithOAuthMock();
+        $customer->method('getUser')->willReturn($shopUser);
+        $customer->method('getFirstName')->willReturn('Existing');
+        $customer->method('getLastName')->willReturn('Name');
+
+        $this->customerRepository
+            ->method('findOneBy')
+            ->willReturnCallback(function (array $criteria) use ($customer) {
+                if (isset($criteria['googleId'])) {
+                    return null;
+                }
+                if (isset($criteria['email'])) {
+                    return $customer;
+                }
+
+                return null;
+            });
+
+        $this->eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                $this->callback(function ($event) use ($customer) {
+                    return $event instanceof OAuthProviderLinkedEvent
+                        && $event->customer === $customer
+                        && $event->provider === 'google'
+                        && $event->providerId === 'google-link-test';
+                }),
+                OAuthProviderLinkedEvent::NAME,
+            );
+
+        $this->resolver->resolve($userData);
+    }
+
+    public function testWorksWithoutEventDispatcher(): void
+    {
+        // Create resolver without event dispatcher
+        $resolver = new UserResolver(
+            customerRepository: $this->customerRepository,
+            customerFactory: $this->customerFactory,
+            shopUserFactory: $this->shopUserFactory,
+            entityManager: $this->entityManager,
+            eventDispatcher: null, // No event dispatcher
+        );
+
+        $userData = new OAuthUserData(
+            provider: 'google',
+            providerId: 'google-no-dispatcher',
+            email: 'nodispatcher@example.com',
+        );
+
+        $this->customerRepository->method('findOneBy')->willReturn(null);
+
+        $newCustomer = $this->createCustomerWithOAuthMock();
+        $newShopUser = $this->createMock(ShopUserInterface::class);
+
+        $this->customerFactory->method('createNew')->willReturn($newCustomer);
+        $this->shopUserFactory->method('createNew')->willReturn($newShopUser);
+
+        // Should not throw even without event dispatcher
+        $result = $resolver->resolve($userData);
+
+        $this->assertInstanceOf(UserResolveResult::class, $result);
+        $this->assertTrue($result->isNewUser);
     }
 
     /**
