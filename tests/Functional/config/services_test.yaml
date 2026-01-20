@@ -1,0 +1,39 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    # Test Customer Factory
+    test.factory.customer:
+        class: Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Factory\TestCustomerFactory
+
+    # Test ShopUser Factory
+    test.factory.shop_user:
+        class: Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Factory\TestShopUserFactory
+
+    # Test Customer Repository
+    test.repository.customer:
+        class: Doctrine\ORM\EntityRepository
+        factory: ['@doctrine.orm.entity_manager', 'getRepository']
+        arguments:
+            - 'Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Entity\TestCustomer'
+
+    # Mock HTTP Client Factory - creates Guzzle client with MockHandler
+    test.http_client_factory:
+        class: Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Mock\MockHttpClientFactory
+
+    # Override the OAuth HTTP Client with mock
+    Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient:
+        class: GuzzleHttp\Client
+        factory: ['@test.http_client_factory', 'create']
+
+    # Alias Sylius services to test services
+    sylius.repository.customer:
+        alias: test.repository.customer
+
+    sylius.factory.customer:
+        alias: test.factory.customer
+
+    sylius.factory.shop_user:
+        alias: test.factory.shop_user
