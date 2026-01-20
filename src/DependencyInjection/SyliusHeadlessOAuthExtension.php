@@ -20,6 +20,11 @@ final class SyliusHeadlessOAuthExtension extends Extension
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
         $loader->load('services.yaml');
 
+        // Security settings
+        $container->setParameter('sylius_headless_oauth.security.allowed_redirect_uris', $config['security']['allowed_redirect_uris']);
+        $container->setParameter('sylius_headless_oauth.security.verify_apple_jwt', $config['security']['verify_apple_jwt']);
+
+        // Provider settings
         $container->setParameter('sylius_headless_oauth.providers.google.enabled', $config['providers']['google']['enabled']);
         $container->setParameter('sylius_headless_oauth.providers.google.client_id', $config['providers']['google']['client_id']);
         $container->setParameter('sylius_headless_oauth.providers.google.client_secret', $config['providers']['google']['client_secret']);

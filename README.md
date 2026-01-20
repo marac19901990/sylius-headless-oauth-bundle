@@ -41,6 +41,18 @@ Create `config/packages/sylius_headless_oauth.yaml`:
 
 ```yaml
 sylius_headless_oauth:
+    # Security settings (recommended for production)
+    security:
+        # List of allowed redirect URIs
+        # If empty, all URIs are allowed (NOT recommended for production)
+        allowed_redirect_uris:
+            - 'https://myapp.com/oauth/callback'
+            - 'https://staging.myapp.com/oauth/callback'
+
+        # Verify Apple id_token JWT signatures against Apple's JWKS
+        # Disable only for testing/development
+        verify_apple_jwt: true
+
     providers:
         google:
             enabled: true
@@ -244,6 +256,88 @@ services:
 ```
 
 3. Add the provider ID field to your Customer entity and update `UserResolver` accordingly.
+
+## Security
+
+This bundle includes several security features to protect your OAuth implementation in production.
+
+### JWT Signature Verification (Apple)
+
+Apple id_tokens are verified against Apple's public keys (JWKS endpoint) before accepting them. This prevents attackers from forging tokens with arbitrary claims.
+
+- **Enabled by default**: `verify_apple_jwt: true`
+- Keys are cached for 24 hours
+- Verification includes: signature, issuer, audience, expiration
+
+### Redirect URI Allowlist
+
+Prevent open redirect attacks by configuring allowed redirect URIs:
+
+```yaml
+sylius_headless_oauth:
+    security:
+        allowed_redirect_uris:
+            - 'https://myapp.com/oauth/callback'
+            - 'https://staging.myapp.com'  # Allows all paths under this origin
+```
+
+If no URIs are configured, validation is skipped (development mode).
+
+### State Parameter (CSRF Protection)
+
+The bundle supports the OAuth `state` parameter for CSRF protection:
+
+```json
+{
+    "code": "authorization_code",
+    "redirectUri": "https://myapp.com/callback",
+    "state": "random_csrf_token_from_your_frontend"
+}
+```
+
+The state is echoed back in the response for client verification:
+
+```json
+{
+    "token": "eyJ...",
+    "customerId": 123,
+    "state": "random_csrf_token_from_your_frontend"
+}
+```
+
+**Frontend responsibility**: Generate, store, and verify the state parameter.
+
+### Security Logging
+
+All OAuth events are logged for audit purposes:
+
+- Successful authentications
+- Authentication failures
+- JWT verification failures
+- Redirect URI rejections
+
+Configure a dedicated Monolog channel for these logs:
+
+```yaml
+monolog:
+    channels: ['oauth_security']
+    handlers:
+        oauth:
+            type: stream
+            path: '%kernel.logs_dir%/oauth_security.log'
+            channels: ['oauth_security']
+```
+
+### Production Checklist
+
+Before deploying to production:
+
+1. **Configure allowed redirect URIs** - Don't leave the allowlist empty
+2. **Keep JWT verification enabled** - `verify_apple_jwt: true`
+3. **Use HTTPS** - All OAuth redirects must use HTTPS
+4. **Implement state parameter** - Your frontend should generate and verify state
+5. **Review security logs** - Monitor for suspicious activity
+6. **Secure your credentials** - Use environment variables, not hardcoded values
 
 ## License
 

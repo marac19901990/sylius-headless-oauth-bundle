@@ -33,4 +33,14 @@ final class OAuthRequest
     #[Assert\NotBlank(message: 'The redirect URI is required.')]
     #[Assert\Url(message: 'The redirect URI must be a valid URL.')]
     public string $redirectUri;
+
+    /**
+     * Optional state parameter for CSRF protection.
+     *
+     * The frontend should generate a random state value before initiating the OAuth flow,
+     * store it, include it in the OAuth request, and verify it matches when handling
+     * the callback. This bundle passes the state through for client verification.
+     */
+    #[Assert\Length(max: 255, maxMessage: 'The state parameter cannot exceed 255 characters.')]
+    public ?string $state = null;
 }

@@ -16,6 +16,25 @@ services:
             - timeout: 10
               http_errors: false
 
+    # Security: Redirect URI Validator
+    Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidator:
+        arguments:
+            $allowedUris: '%sylius_headless_oauth.security.allowed_redirect_uris%'
+
+    # Security: OAuth Security Logger
+    Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger:
+        arguments:
+            $logger: '@?logger'
+        tags:
+            - { name: 'monolog.logger', channel: 'oauth_security' }
+
+    # Security: Apple JWKS Verifier
+    Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifier:
+        arguments:
+            $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $cache: '@?cache.app'
+            $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
+
     # Apple Client Secret Generator
     Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator:
         arguments:
@@ -41,6 +60,9 @@ services:
             $clientSecretGenerator: '@Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator'
             $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
             $enabled: '%sylius_headless_oauth.providers.apple.enabled%'
+            $jwksVerifier: '@Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifier'
+            $verifyJwt: '%sylius_headless_oauth.security.verify_apple_jwt%'
+            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger'
         tags:
             - { name: 'sylius_headless_oauth.provider' }
 
@@ -58,6 +80,8 @@ services:
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
             $userResolver: '@Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver'
             $jwtManager: '@lexik_jwt_authentication.jwt_manager'
+            $redirectUriValidator: '@Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidator'
+            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger'
         tags:
             - { name: 'api_platform.state_processor' }
 
@@ -67,6 +91,7 @@ services:
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
             $userResolver: '@Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver'
             $jwtManager: '@lexik_jwt_authentication.jwt_manager'
+            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger'
         tags:
             - { name: 'api_platform.state_processor' }
 

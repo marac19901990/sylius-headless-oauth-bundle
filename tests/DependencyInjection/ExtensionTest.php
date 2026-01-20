@@ -36,6 +36,36 @@ final class ExtensionTest extends TestCase
     }
 
     #[Test]
+    public function setsSecurityParameters(): void
+    {
+        $this->extension->load([], $this->container);
+
+        self::assertSame([], $this->container->getParameter('sylius_headless_oauth.security.allowed_redirect_uris'));
+        self::assertTrue($this->container->getParameter('sylius_headless_oauth.security.verify_apple_jwt'));
+    }
+
+    #[Test]
+    public function canOverrideSecurityConfiguration(): void
+    {
+        $this->extension->load([
+            [
+                'security' => [
+                    'allowed_redirect_uris' => [
+                        'https://example.com/callback',
+                    ],
+                    'verify_apple_jwt' => false,
+                ],
+            ],
+        ], $this->container);
+
+        self::assertSame(
+            ['https://example.com/callback'],
+            $this->container->getParameter('sylius_headless_oauth.security.allowed_redirect_uris'),
+        );
+        self::assertFalse($this->container->getParameter('sylius_headless_oauth.security.verify_apple_jwt'));
+    }
+
+    #[Test]
     public function setsGoogleParameters(): void
     {
         $this->extension->load([], $this->container);

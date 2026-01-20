@@ -10,6 +10,10 @@ final readonly class OAuthResponse
         public string $token,
         public ?string $refreshToken = null,
         public ?int $customerId = null,
+        /**
+         * State parameter echoed back for client CSRF verification.
+         */
+        public ?string $state = null,
     ) {
     }
 }

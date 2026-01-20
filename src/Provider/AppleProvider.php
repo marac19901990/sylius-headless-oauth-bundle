@@ -11,6 +11,8 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifier;
+use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger;
 use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 
 use function count;
@@ -37,6 +39,9 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
         private readonly AppleClientSecretGeneratorInterface $clientSecretGenerator,
         private readonly string $clientId,
         private readonly bool $enabled = true,
+        private readonly ?AppleJwksVerifier $jwksVerifier = null,
+        private readonly bool $verifyJwt = true,
+        private readonly ?OAuthSecurityLogger $securityLogger = null,
         ?CredentialValidator $credentialValidator = null,
     ) {
         $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
@@ -206,14 +211,44 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
     }
 
     /**
-     * Decode the id_token JWT to extract user data.
+     * Decode and verify the id_token JWT.
      *
-     * Note: In production, you should verify the JWT signature using Apple's public keys.
-     * For simplicity, we're just decoding the payload here.
+     * When verification is enabled (default), validates the JWT signature
+     * against Apple's JWKS and checks standard claims (iss, aud, exp).
      *
      * @return array{sub: string, email: string, email_verified?: bool, firstName?: string, lastName?: string}
      */
     private function decodeIdToken(string $idToken): array
+    {
+        // If verification is enabled and we have a verifier, use it
+        if ($this->verifyJwt && $this->jwksVerifier !== null) {
+            try {
+                return $this->jwksVerifier->verify($idToken);
+            } catch (OAuthException $e) {
+                // Log the verification failure
+                $this->securityLogger?->logJwtVerificationFailure(
+                    self::PROVIDER_NAME,
+                    $e->getMessage(),
+                );
+
+                throw $e;
+            }
+        }
+
+        // Fallback: decode without verification (for testing or when verifier unavailable)
+        // In production with verify_apple_jwt: true, this path should not be reached
+        return $this->decodeIdTokenWithoutVerification($idToken);
+    }
+
+    /**
+     * Decode the id_token JWT without signature verification.
+     *
+     * WARNING: This should only be used for testing purposes.
+     * In production, always use the JWKS verifier.
+     *
+     * @return array{sub: string, email: string, email_verified?: bool, firstName?: string, lastName?: string}
+     */
+    private function decodeIdTokenWithoutVerification(string $idToken): array
     {
         $parts = explode('.', $idToken);
 

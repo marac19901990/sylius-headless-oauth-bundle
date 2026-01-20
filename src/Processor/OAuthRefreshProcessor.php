@@ -14,6 +14,8 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\ProviderNotSupportedException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\RefreshableOAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
+use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger;
+use Throwable;
 
 use function sprintf;
 
@@ -39,6 +41,7 @@ final class OAuthRefreshProcessor implements ProcessorInterface
         private readonly iterable $providers,
         private readonly UserResolverInterface $userResolver,
         private readonly JWTTokenManagerInterface $jwtManager,
+        private readonly ?OAuthSecurityLogger $securityLogger = null,
     ) {
     }
 
@@ -50,22 +53,46 @@ final class OAuthRefreshProcessor implements ProcessorInterface
         /** @var string $providerName */
         $providerName = $uriVariables['provider'] ?? '';
 
-        $provider = $this->findRefreshableProvider($providerName);
-        $tokenData = $provider->refreshTokens($data->refreshToken);
+        try {
+            $provider = $this->findRefreshableProvider($providerName);
+            $tokenData = $provider->refreshTokens($data->refreshToken);
 
-        // Get user data from the refreshed tokens (each provider handles this differently)
-        $userData = $provider->getUserDataFromTokenData($tokenData);
+            // Get user data from the refreshed tokens (each provider handles this differently)
+            $userData = $provider->getUserDataFromTokenData($tokenData);
 
-        // Resolve the user (should already exist since they had a refresh token)
-        $shopUser = $this->userResolver->resolve($userData);
+            // Resolve the user (should already exist since they had a refresh token)
+            $shopUser = $this->userResolver->resolve($userData);
 
-        $token = $this->jwtManager->create($shopUser);
+            $token = $this->jwtManager->create($shopUser);
+            $customerId = $shopUser->getCustomer()?->getId();
 
-        return new OAuthResponse(
-            token: $token,
-            refreshToken: $tokenData->refreshToken,
-            customerId: $shopUser->getCustomer()?->getId(),
-        );
+            // Log successful refresh
+            $this->securityLogger?->logRefreshSuccess($providerName, $customerId);
+
+            return new OAuthResponse(
+                token: $token,
+                refreshToken: $tokenData->refreshToken,
+                customerId: $customerId,
+            );
+        } catch (ProviderNotSupportedException $e) {
+            $this->securityLogger?->logRefreshFailure(
+                $providerName,
+                'Provider not supported',
+            );
+            throw $e;
+        } catch (OAuthException $e) {
+            $this->securityLogger?->logRefreshFailure(
+                $providerName,
+                $e->getMessage(),
+            );
+            throw $e;
+        } catch (Throwable $e) {
+            $this->securityLogger?->logRefreshFailure(
+                $providerName,
+                'Unexpected error: ' . $e->getMessage(),
+            );
+            throw $e;
+        }
     }
 
     private function findRefreshableProvider(string $providerName): RefreshableOAuthProviderInterface

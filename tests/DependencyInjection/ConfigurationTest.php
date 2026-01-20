@@ -30,6 +30,50 @@ final class ConfigurationTest extends TestCase
         self::assertArrayHasKey('providers', $config);
         self::assertArrayHasKey('google', $config['providers']);
         self::assertArrayHasKey('apple', $config['providers']);
+        self::assertArrayHasKey('security', $config);
+    }
+
+    #[Test]
+    public function securityHasDefaultValues(): void
+    {
+        $config = $this->processor->processConfiguration($this->configuration, []);
+
+        self::assertSame([], $config['security']['allowed_redirect_uris']);
+        self::assertTrue($config['security']['verify_apple_jwt']);
+    }
+
+    #[Test]
+    public function canConfigureAllowedRedirectUris(): void
+    {
+        $config = $this->processor->processConfiguration($this->configuration, [
+            [
+                'security' => [
+                    'allowed_redirect_uris' => [
+                        'https://example.com/callback',
+                        'https://staging.example.com',
+                    ],
+                ],
+            ],
+        ]);
+
+        self::assertSame([
+            'https://example.com/callback',
+            'https://staging.example.com',
+        ], $config['security']['allowed_redirect_uris']);
+    }
+
+    #[Test]
+    public function canDisableAppleJwtVerification(): void
+    {
+        $config = $this->processor->processConfiguration($this->configuration, [
+            [
+                'security' => [
+                    'verify_apple_jwt' => false,
+                ],
+            ],
+        ]);
+
+        self::assertFalse($config['security']['verify_apple_jwt']);
     }
 
     #[Test]
