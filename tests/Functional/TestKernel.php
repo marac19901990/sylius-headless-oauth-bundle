@@ -126,6 +126,7 @@ final class TestKernel extends Kernel
             ],
         ]);
 
+        $projectDir = $this->getProjectDir();
         $container->extension('api_platform', [
             'title' => 'OAuth Test API',
             'version' => '1.0.0',
@@ -139,9 +140,13 @@ final class TestKernel extends Kernel
                     'vary' => ['Content-Type', 'Authorization', 'Origin'],
                 ],
             ],
+            'mapping' => [
+                'paths' => [
+                    $projectDir . '/src/Api/Resource',
+                ],
+            ],
         ]);
 
-        $projectDir = dirname(__DIR__, 2);
         $container->extension('lexik_jwt_authentication', [
             'secret_key' => $projectDir . '/tests/Functional/config/jwt/private.pem',
             'public_key' => $projectDir . '/tests/Functional/config/jwt/public.pem',
