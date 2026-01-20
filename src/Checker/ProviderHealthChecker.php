@@ -10,7 +10,7 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 /**
  * Service to check the health of all registered OAuth providers.
  */
-final class ProviderHealthChecker
+final class ProviderHealthChecker implements ProviderHealthCheckerInterface
 {
     /**
      * @param iterable<OAuthProviderInterface> $providers

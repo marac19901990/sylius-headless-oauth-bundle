@@ -184,19 +184,9 @@ final class OAuthSecurityLoggerTest extends TestCase
         $this->securityLogger->logAuthSuccess('google', 'not-an-email', 1);
     }
 
-    public function testConstructorWithNullLoggerUsesNullLogger(): void
+    public function testWorksWithNullLogger(): void
     {
-        $logger = new OAuthSecurityLogger(null);
-
-        // This should not throw - NullLogger is used
-        $logger->logAuthSuccess('google', 'test@example.com', 1);
-
-        $this->assertTrue(true);
-    }
-
-    public function testConstructorWithoutLoggerUsesNullLogger(): void
-    {
-        $logger = new OAuthSecurityLogger();
+        $logger = new OAuthSecurityLogger(new \Psr\Log\NullLogger());
 
         // This should not throw - NullLogger is used
         $logger->logAuthSuccess('google', 'test@example.com', 1);

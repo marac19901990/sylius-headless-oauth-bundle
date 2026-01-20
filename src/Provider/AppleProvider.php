@@ -12,9 +12,9 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
-use Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifier;
-use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger;
-use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
+use Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifierInterface;
+use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface;
 
 use function count;
 use function strlen;
@@ -36,12 +36,12 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
     public function __construct(
         private readonly ClientInterface $httpClient,
         private readonly AppleClientSecretGeneratorInterface $clientSecretGenerator,
-        private readonly CredentialValidator $credentialValidator,
+        private readonly CredentialValidatorInterface $credentialValidator,
         private readonly string $clientId,
         private readonly bool $enabled = true,
-        private readonly ?AppleJwksVerifier $jwksVerifier = null,
+        private readonly ?AppleJwksVerifierInterface $jwksVerifier = null,
         private readonly bool $verifyJwt = true,
-        private readonly ?OAuthSecurityLogger $securityLogger = null,
+        private readonly ?OAuthSecurityLoggerInterface $securityLogger = null,
     ) {
         if ($this->enabled) {
             $this->validateCredentials();

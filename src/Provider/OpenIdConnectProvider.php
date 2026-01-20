@@ -16,7 +16,7 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryServiceInterface;
-use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface;
 
 use function count;
 use function in_array;
@@ -43,7 +43,7 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
     public function __construct(
         private readonly ClientInterface $httpClient,
         private readonly OidcDiscoveryServiceInterface $discoveryService,
-        private readonly CredentialValidator $credentialValidator,
+        private readonly CredentialValidatorInterface $credentialValidator,
         private readonly string $clientId,
         private readonly string $clientSecret,
         private readonly string $issuerUrl,

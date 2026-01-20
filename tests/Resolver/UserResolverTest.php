@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Tests\Resolver;
 
-use DateTime;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
 use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPreUserCreateEvent;
@@ -16,10 +16,12 @@ use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class UserResolverTest extends TestCase
@@ -29,6 +31,7 @@ class UserResolverTest extends TestCase
     private FactoryInterface&MockObject $shopUserFactory;
     private EntityManagerInterface&MockObject $entityManager;
     private ProviderFieldMapper $fieldMapper;
+    private ClockInterface $clock;
     private EventDispatcherInterface&MockObject $eventDispatcher;
     private UserResolver $resolver;
 
@@ -39,6 +42,7 @@ class UserResolverTest extends TestCase
         $this->shopUserFactory = $this->createMock(FactoryInterface::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->fieldMapper = new ProviderFieldMapper();
+        $this->clock = new MockClock();
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $this->resolver = new UserResolver(
@@ -47,6 +51,7 @@ class UserResolverTest extends TestCase
             shopUserFactory: $this->shopUserFactory,
             entityManager: $this->entityManager,
             fieldMapper: $this->fieldMapper,
+            clock: $this->clock,
             eventDispatcher: $this->eventDispatcher,
         );
     }
@@ -197,7 +202,7 @@ class UserResolverTest extends TestCase
         $newShopUser->expects($this->once())->method('setCustomer')->with($newCustomer);
         $newShopUser->expects($this->once())->method('setUsername')->with('newuser@example.com');
         $newShopUser->expects($this->once())->method('setEnabled')->with(true);
-        $newShopUser->expects($this->once())->method('setVerifiedAt')->with($this->isInstanceOf(DateTime::class));
+        $newShopUser->expects($this->once())->method('setVerifiedAt')->with($this->isInstanceOf(DateTimeInterface::class));
         $newShopUser->expects($this->once())->method('setPlainPassword')->with($this->isType('string'));
 
         // Expect pre-create event to be dispatched
@@ -247,7 +252,7 @@ class UserResolverTest extends TestCase
         $newShopUser->expects($this->once())->method('setCustomer')->with($customer);
         $newShopUser->expects($this->once())->method('setUsername')->with('customeronly@example.com');
         $newShopUser->expects($this->once())->method('setEnabled')->with(true);
-        $newShopUser->expects($this->once())->method('setVerifiedAt')->with($this->isInstanceOf(DateTime::class));
+        $newShopUser->expects($this->once())->method('setVerifiedAt')->with($this->isInstanceOf(DateTimeInterface::class));
 
         $this->entityManager->expects($this->once())->method('persist')->with($newShopUser);
         $this->entityManager->expects($this->once())->method('flush');
@@ -440,12 +445,12 @@ class UserResolverTest extends TestCase
         $this->customerFactory->method('createNew')->willReturn($newCustomer);
         $this->shopUserFactory->method('createNew')->willReturn($newShopUser);
 
-        // The key assertion: setVerifiedAt should be called with a DateTime
+        // The key assertion: setVerifiedAt should be called with a DateTimeInterface
         $newShopUser
             ->expects($this->once())
             ->method('setVerifiedAt')
             ->with($this->callback(function ($dateTime) {
-                return $dateTime instanceof DateTime
+                return $dateTime instanceof DateTimeInterface
                     && abs($dateTime->getTimestamp() - time()) < 5; // Within 5 seconds
             }));
 
@@ -536,6 +541,7 @@ class UserResolverTest extends TestCase
             shopUserFactory: $this->shopUserFactory,
             entityManager: $this->entityManager,
             fieldMapper: $this->fieldMapper,
+            clock: $this->clock,
             eventDispatcher: null, // No event dispatcher
         );
 

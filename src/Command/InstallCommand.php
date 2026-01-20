@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Command;
 
-use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker;
+use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthCheckerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthStatus;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -31,14 +31,12 @@ final class InstallCommand extends Command
     private const REQUIRED_EXTENSIONS = ['json', 'openssl'];
     private const CONFIG_FILE_NAME = 'sylius_headless_oauth.yaml';
 
-    private Filesystem $filesystem;
-
     public function __construct(
-        private readonly ProviderHealthChecker $healthChecker,
+        private readonly ProviderHealthCheckerInterface $healthChecker,
         private readonly string $projectDir,
+        private readonly Filesystem $filesystem,
     ) {
         parent::__construct();
-        $this->filesystem = new Filesystem();
     }
 
     protected function configure(): void

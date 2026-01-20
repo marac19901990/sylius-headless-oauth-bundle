@@ -6,15 +6,13 @@ namespace Marac\SyliusHeadlessOAuthBundle\Validator;
 
 use InvalidArgumentException;
 
-use function sprintf;
-
 /**
- * Validates OAuth provider credentials configuration.
+ * Interface for OAuth provider credential validation.
  *
  * Centralizes credential validation logic to ensure DRY principle
  * and consistent error messages across providers.
  */
-final class CredentialValidator implements CredentialValidatorInterface
+interface CredentialValidatorInterface
 {
     /**
      * Validate that a credential is configured and not using placeholder env var.
@@ -31,21 +29,7 @@ final class CredentialValidator implements CredentialValidatorInterface
         string $envVarName,
         string $providerName,
         string $credentialName,
-    ): void {
-        $placeholder = sprintf('%%env(%s)%%', $envVarName);
-        $providerLower = strtolower($providerName);
-
-        if (empty($value) || $value === $placeholder) {
-            throw new InvalidArgumentException(sprintf(
-                '%s OAuth is enabled but %s is not configured. ' .
-                'Set the environment variable or disable %s: sylius_headless_oauth.providers.%s.enabled: false',
-                $providerName,
-                $envVarName,
-                $providerName,
-                $providerLower,
-            ));
-        }
-    }
+    ): void;
 
     /**
      * Validate multiple credentials at once.
@@ -55,15 +39,5 @@ final class CredentialValidator implements CredentialValidatorInterface
      *
      * @throws InvalidArgumentException If any credential is not configured
      */
-    public function validateMany(array $credentials, string $providerName): void
-    {
-        foreach ($credentials as $config) {
-            $this->validate(
-                $config['value'],
-                $config['env'],
-                $providerName,
-                $config['name'],
-            );
-        }
-    }
+    public function validateMany(array $credentials, string $providerName): void;
 }

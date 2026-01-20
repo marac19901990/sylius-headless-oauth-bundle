@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Command;
 
-use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker;
+use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthCheckerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthStatus;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,7 +21,7 @@ use function sprintf;
 final class CheckProvidersCommand extends Command
 {
     public function __construct(
-        private readonly ProviderHealthChecker $healthChecker,
+        private readonly ProviderHealthCheckerInterface $healthChecker,
     ) {
         parent::__construct();
     }

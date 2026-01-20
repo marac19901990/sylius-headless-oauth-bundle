@@ -6,7 +6,7 @@ namespace Marac\SyliusHeadlessOAuthBundle\Api\Action;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
-use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper;
+use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -40,7 +40,7 @@ final class UnlinkOAuthConnectionAction
     public function __construct(
         private readonly Security $security,
         private readonly EntityManagerInterface $entityManager,
-        private readonly ProviderFieldMapper $fieldMapper,
+        private readonly ProviderFieldMapperInterface $fieldMapper,
     ) {
     }
 

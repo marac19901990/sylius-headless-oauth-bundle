@@ -12,7 +12,7 @@ use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
  * This service centralizes the mapping logic that was previously
  * duplicated across UserResolver methods.
  */
-final class ProviderFieldMapper
+final class ProviderFieldMapper implements ProviderFieldMapperInterface
 {
     private const PROVIDER_FIELD_MAP = [
         'google' => 'googleId',

@@ -14,8 +14,8 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\ProviderNotSupportedException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
-use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger;
-use Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidator;
+use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface;
+use Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidatorInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Throwable;
 
@@ -40,8 +40,8 @@ final class OAuthProcessor implements ProcessorInterface
         private readonly iterable $providers,
         private readonly UserResolverInterface $userResolver,
         private readonly JWTTokenManagerInterface $jwtManager,
-        private readonly ?RedirectUriValidator $redirectUriValidator = null,
-        private readonly ?OAuthSecurityLogger $securityLogger = null,
+        private readonly ?RedirectUriValidatorInterface $redirectUriValidator = null,
+        private readonly ?OAuthSecurityLoggerInterface $securityLogger = null,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
     }

@@ -29,7 +29,7 @@ use const JSON_THROW_ON_ERROR;
  * Apple's JWKS (JSON Web Key Set) contains the public keys used to sign id_tokens.
  * This service fetches these keys, caches them, and uses them to verify JWT signatures.
  */
-final class AppleJwksVerifier
+final class AppleJwksVerifier implements AppleJwksVerifierInterface
 {
     private const JWKS_URL = 'https://appleid.apple.com/auth/keys';
     private const ISSUER = 'https://appleid.apple.com';

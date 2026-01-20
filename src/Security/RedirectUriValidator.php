@@ -18,7 +18,7 @@ use function str_starts_with;
  * Security: Prevents open redirect attacks by ensuring redirect URIs
  * are only allowed to configured, trusted domains.
  */
-final class RedirectUriValidator
+final class RedirectUriValidator implements RedirectUriValidatorInterface
 {
     /**
      * @param array<string> $allowedUris List of allowed redirect URIs

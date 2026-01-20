@@ -6,8 +6,16 @@ services:
     # Credential Validator
     Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator: ~
 
+    # Interface alias for CredentialValidator
+    Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator
+
     # Provider Field Mapper
     Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper: ~
+
+    # Interface alias for ProviderFieldMapper
+    Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper
 
     # HTTP Client for OAuth requests
     Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient:
@@ -21,12 +29,23 @@ services:
         arguments:
             $allowedUris: '%sylius_headless_oauth.security.allowed_redirect_uris%'
 
+    # Interface alias for RedirectUriValidator
+    Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidatorInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidator
+
+    # NullLogger fallback for minimal kernels (no Monolog)
+    Psr\Log\NullLogger: ~
+
     # Security: OAuth Security Logger
     Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger:
         arguments:
-            $logger: '@?logger'
+            $logger: '@logger'
         tags:
             - { name: 'monolog.logger', channel: 'oauth_security' }
+
+    # Interface alias for OAuthSecurityLogger
+    Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger
 
     # Security: Apple JWKS Verifier
     Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifier:
@@ -35,10 +54,14 @@ services:
             $cache: '@?cache.app'
             $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
 
+    # Interface alias for AppleJwksVerifier
+    Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifierInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifier
+
     # Apple Client Secret Generator
     Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator:
         arguments:
-            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface'
             $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
             $teamId: '%sylius_headless_oauth.providers.apple.team_id%'
             $keyId: '%sylius_headless_oauth.providers.apple.key_id%'
@@ -48,7 +71,7 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
-            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface'
             $clientId: '%sylius_headless_oauth.providers.google.client_id%'
             $clientSecret: '%sylius_headless_oauth.providers.google.client_secret%'
             $enabled: '%sylius_headless_oauth.providers.google.enabled%'
@@ -60,12 +83,12 @@ services:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
             $clientSecretGenerator: '@Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator'
-            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface'
             $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
             $enabled: '%sylius_headless_oauth.providers.apple.enabled%'
-            $jwksVerifier: '@Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifier'
+            $jwksVerifier: '@Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifierInterface'
             $verifyJwt: '%sylius_headless_oauth.security.verify_apple_jwt%'
-            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger'
+            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface'
         tags:
             - { name: 'sylius_headless_oauth.provider' }
 
@@ -73,7 +96,7 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Provider\FacebookProvider:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
-            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface'
             $clientId: '%sylius_headless_oauth.providers.facebook.client_id%'
             $clientSecret: '%sylius_headless_oauth.providers.facebook.client_secret%'
             $enabled: '%sylius_headless_oauth.providers.facebook.enabled%'
@@ -84,7 +107,7 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Provider\GitHubProvider:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
-            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface'
             $clientId: '%sylius_headless_oauth.providers.github.client_id%'
             $clientSecret: '%sylius_headless_oauth.providers.github.client_secret%'
             $enabled: '%sylius_headless_oauth.providers.github.enabled%'
@@ -98,17 +121,22 @@ services:
             $customerFactory: '@sylius.factory.customer'
             $shopUserFactory: '@sylius.factory.shop_user'
             $entityManager: '@doctrine.orm.entity_manager'
-            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper'
+            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface'
+            $clock: '@Psr\Clock\ClockInterface'
             $eventDispatcher: '@event_dispatcher'
+
+    # Interface alias for UserResolver
+    Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver
 
     # OAuth Processor (API Platform)
     Marac\SyliusHeadlessOAuthBundle\Processor\OAuthProcessor:
         arguments:
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
-            $userResolver: '@Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver'
+            $userResolver: '@Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface'
             $jwtManager: '@lexik_jwt_authentication.jwt_manager'
-            $redirectUriValidator: '@Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidator'
-            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger'
+            $redirectUriValidator: '@Marac\SyliusHeadlessOAuthBundle\Security\RedirectUriValidatorInterface'
+            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface'
             $eventDispatcher: '@event_dispatcher'
         tags:
             - { name: 'api_platform.state_processor' }
@@ -117,9 +145,9 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Processor\OAuthRefreshProcessor:
         arguments:
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
-            $userResolver: '@Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver'
+            $userResolver: '@Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface'
             $jwtManager: '@lexik_jwt_authentication.jwt_manager'
-            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger'
+            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface'
         tags:
             - { name: 'api_platform.state_processor' }
 
@@ -128,18 +156,33 @@ services:
         arguments:
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
 
+    # Interface alias for ProviderHealthChecker
+    Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthCheckerInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker
+
     # Check Providers Command
     Marac\SyliusHeadlessOAuthBundle\Command\CheckProvidersCommand:
         arguments:
-            $healthChecker: '@Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker'
+            $healthChecker: '@Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthCheckerInterface'
         tags:
             - { name: 'console.command' }
+
+    # Symfony Filesystem for DI
+    Symfony\Component\Filesystem\Filesystem: ~
+
+    # Symfony Clock for DI (PSR-20)
+    Symfony\Component\Clock\NativeClock: ~
+
+    # PSR-20 ClockInterface alias
+    Psr\Clock\ClockInterface:
+        alias: Symfony\Component\Clock\NativeClock
 
     # Install Command
     Marac\SyliusHeadlessOAuthBundle\Command\InstallCommand:
         arguments:
-            $healthChecker: '@Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker'
+            $healthChecker: '@Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthCheckerInterface'
             $projectDir: '%kernel.project_dir%'
+            $filesystem: '@Symfony\Component\Filesystem\Filesystem'
         tags:
             - { name: 'console.command' }
 
@@ -168,11 +211,11 @@ services:
         arguments:
             $security: '@security.helper'
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
-            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper'
+            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface'
 
     # Unlink OAuth Connection Action (API)
     Marac\SyliusHeadlessOAuthBundle\Api\Action\UnlinkOAuthConnectionAction:
         arguments:
             $security: '@security.helper'
             $entityManager: '@doctrine.orm.entity_manager'
-            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper'
+            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface'

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Resolver;
 
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
 use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPreUserCreateEvent;
 use Marac\SyliusHeadlessOAuthBundle\Event\OAuthProviderLinkedEvent;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
-use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper;
+use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface;
+use Psr\Clock\ClockInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
@@ -36,7 +36,8 @@ final class UserResolver implements UserResolverInterface
         private readonly FactoryInterface $customerFactory,
         private readonly FactoryInterface $shopUserFactory,
         private readonly EntityManagerInterface $entityManager,
-        private readonly ProviderFieldMapper $fieldMapper,
+        private readonly ProviderFieldMapperInterface $fieldMapper,
+        private readonly ClockInterface $clock,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
     }
@@ -125,7 +126,7 @@ final class UserResolver implements UserResolverInterface
         $shopUser->setEnabled(true);
 
         // Mark as verified since OAuth providers have already verified the email
-        $shopUser->setVerifiedAt(new DateTime());
+        $shopUser->setVerifiedAt($this->clock->now());
 
         // Generate a random password since OAuth users don't need one
         $shopUser->setPlainPassword(bin2hex(random_bytes(16)));
@@ -166,7 +167,7 @@ final class UserResolver implements UserResolverInterface
         $shopUser->setEnabled(true);
 
         // Mark as verified since OAuth providers have already verified the email
-        $shopUser->setVerifiedAt(new DateTime());
+        $shopUser->setVerifiedAt($this->clock->now());
 
         // Generate a random password since OAuth users don't need one
         $shopUser->setPlainPassword(bin2hex(random_bytes(16)));

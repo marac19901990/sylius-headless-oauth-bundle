@@ -14,7 +14,7 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\ProviderNotSupportedException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\RefreshableOAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
-use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger;
+use Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface;
 use Throwable;
 
 use function sprintf;
@@ -41,7 +41,7 @@ final class OAuthRefreshProcessor implements ProcessorInterface
         private readonly iterable $providers,
         private readonly UserResolverInterface $userResolver,
         private readonly JWTTokenManagerInterface $jwtManager,
-        private readonly ?OAuthSecurityLogger $securityLogger = null,
+        private readonly ?OAuthSecurityLoggerInterface $securityLogger = null,
     ) {
     }
 

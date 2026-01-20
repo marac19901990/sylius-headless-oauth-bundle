@@ -6,7 +6,7 @@ namespace Marac\SyliusHeadlessOAuthBundle\Provider\Apple;
 
 use Firebase\JWT\JWT;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
-use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface;
 
 use function sprintf;
 
@@ -24,7 +24,7 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
     private const MAX_EXPIRY_SECONDS = 15777000; // ~6 months
 
     public function __construct(
-        private readonly CredentialValidator $credentialValidator,
+        private readonly CredentialValidatorInterface $credentialValidator,
         private readonly string $clientId,
         private readonly string $teamId,
         private readonly string $keyId,

@@ -7,7 +7,7 @@ namespace Marac\SyliusHeadlessOAuthBundle\Api\Action;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\ConfigurableOAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
-use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper;
+use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -40,7 +40,7 @@ final class ListOAuthConnectionsAction
     public function __construct(
         private readonly Security $security,
         private readonly iterable $providers,
-        private readonly ProviderFieldMapper $fieldMapper,
+        private readonly ProviderFieldMapperInterface $fieldMapper,
     ) {
     }
 

@@ -198,7 +198,7 @@ class InstallCommandTest extends TestCase
     public function testCommandHasHelpText(): void
     {
         $healthChecker = new ProviderHealthChecker([]);
-        $command = new InstallCommand($healthChecker, $this->tempDir);
+        $command = new InstallCommand($healthChecker, $this->tempDir, $this->filesystem);
 
         $help = $command->getHelp();
         $description = $command->getDescription();
@@ -211,7 +211,7 @@ class InstallCommandTest extends TestCase
     public function testCommandHasExpectedOptions(): void
     {
         $healthChecker = new ProviderHealthChecker([]);
-        $command = new InstallCommand($healthChecker, $this->tempDir);
+        $command = new InstallCommand($healthChecker, $this->tempDir, $this->filesystem);
         $definition = $command->getDefinition();
 
         $this->assertTrue($definition->hasOption('force'));
@@ -225,7 +225,7 @@ class InstallCommandTest extends TestCase
     private function createCommandTester(array $providers): CommandTester
     {
         $healthChecker = new ProviderHealthChecker($providers);
-        $command = new InstallCommand($healthChecker, $this->tempDir);
+        $command = new InstallCommand($healthChecker, $this->tempDir, $this->filesystem);
 
         $application = new Application();
         $application->add($command);

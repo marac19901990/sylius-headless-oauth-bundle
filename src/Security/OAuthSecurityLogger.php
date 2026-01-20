@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Marac\SyliusHeadlessOAuthBundle\Security;
 
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 use function count;
 use function strlen;
@@ -16,14 +15,11 @@ use function strlen;
  * Provides structured logging for authentication events, failures,
  * and suspicious activity to enable security monitoring and audit trails.
  */
-final class OAuthSecurityLogger
+final class OAuthSecurityLogger implements OAuthSecurityLoggerInterface
 {
-    private readonly LoggerInterface $logger;
-
     public function __construct(
-        ?LoggerInterface $logger = null,
+        private readonly LoggerInterface $logger,
     ) {
-        $this->logger = $logger ?? new NullLogger();
     }
 
     /**

@@ -11,7 +11,7 @@ use JsonException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
-use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface;
 
 use const JSON_THROW_ON_ERROR;
 
@@ -40,7 +40,7 @@ final class GitHubProvider implements ConfigurableOAuthProviderInterface, Refres
 
     public function __construct(
         private readonly ClientInterface $httpClient,
-        private readonly CredentialValidator $credentialValidator,
+        private readonly CredentialValidatorInterface $credentialValidator,
         private readonly string $clientId,
         private readonly string $clientSecret,
         private readonly bool $enabled = true,

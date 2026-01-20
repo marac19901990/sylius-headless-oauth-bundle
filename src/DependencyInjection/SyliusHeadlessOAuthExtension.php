@@ -7,6 +7,7 @@ namespace Marac\SyliusHeadlessOAuthBundle\DependencyInjection;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OpenIdConnectProvider;
 use Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryService;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -75,6 +76,7 @@ final class SyliusHeadlessOAuthExtension extends Extension implements PrependExt
             $definition->setArguments([
                 new Reference('Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'),
                 new Reference(OidcDiscoveryService::class),
+                new Reference(CredentialValidatorInterface::class),
                 $providerConfig['client_id'],
                 $providerConfig['client_secret'],
                 $providerConfig['issuer_url'],
