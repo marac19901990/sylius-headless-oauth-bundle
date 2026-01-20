@@ -1,0 +1,57 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    # HTTP Client for OAuth requests
+    Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient:
+        class: GuzzleHttp\Client
+        arguments:
+            - timeout: 10
+              http_errors: false
+
+    # Apple Client Secret Generator
+    Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator:
+        arguments:
+            $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
+            $teamId: '%sylius_headless_oauth.providers.apple.team_id%'
+            $keyId: '%sylius_headless_oauth.providers.apple.key_id%'
+            $privateKeyPath: '%sylius_headless_oauth.providers.apple.private_key_path%'
+
+    # Google OAuth Provider
+    Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider:
+        arguments:
+            $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $clientId: '%sylius_headless_oauth.providers.google.client_id%'
+            $clientSecret: '%sylius_headless_oauth.providers.google.client_secret%'
+            $enabled: '%sylius_headless_oauth.providers.google.enabled%'
+        tags:
+            - { name: 'sylius_headless_oauth.provider' }
+
+    # Apple OAuth Provider
+    Marac\SyliusHeadlessOAuthBundle\Provider\AppleProvider:
+        arguments:
+            $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $clientSecretGenerator: '@Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator'
+            $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
+            $enabled: '%sylius_headless_oauth.providers.apple.enabled%'
+        tags:
+            - { name: 'sylius_headless_oauth.provider' }
+
+    # User Resolver
+    Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver:
+        arguments:
+            $customerRepository: '@sylius.repository.customer'
+            $shopUserRepository: '@sylius.repository.shop_user'
+            $customerFactory: '@sylius.factory.customer'
+            $shopUserFactory: '@sylius.factory.shop_user'
+            $entityManager: '@doctrine.orm.entity_manager'
+
+    # OAuth Processor (API Platform)
+    Marac\SyliusHeadlessOAuthBundle\Processor\OAuthProcessor:
+        arguments:
+            $providers: !tagged_iterator 'sylius_headless_oauth.provider'
+            $userResolver: '@Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver'
+            $jwtManager: '@lexik_jwt_authentication.jwt_manager'
+        tags:
+            - { name: 'api_platform.state_processor' }
