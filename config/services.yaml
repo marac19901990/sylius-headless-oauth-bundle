@@ -76,6 +76,16 @@ services:
         tags:
             - { name: 'sylius_headless_oauth.provider' }
 
+    # GitHub OAuth Provider
+    Marac\SyliusHeadlessOAuthBundle\Provider\GitHubProvider:
+        arguments:
+            $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $clientId: '%sylius_headless_oauth.providers.github.client_id%'
+            $clientSecret: '%sylius_headless_oauth.providers.github.client_secret%'
+            $enabled: '%sylius_headless_oauth.providers.github.enabled%'
+        tags:
+            - { name: 'sylius_headless_oauth.provider' }
+
     # User Resolver
     Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver:
         arguments:

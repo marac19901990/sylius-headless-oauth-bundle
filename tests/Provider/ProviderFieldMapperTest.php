@@ -133,8 +133,9 @@ final class ProviderFieldMapperTest extends TestCase
         self::assertContains('google', $providers);
         self::assertContains('apple', $providers);
         self::assertContains('facebook', $providers);
+        self::assertContains('github', $providers);
         self::assertContains('oidc', $providers);
-        self::assertCount(4, $providers);
+        self::assertCount(5, $providers);
     }
 
     #[Test]
@@ -143,6 +144,7 @@ final class ProviderFieldMapperTest extends TestCase
         self::assertTrue($this->mapper->isBuiltInProvider('google'));
         self::assertTrue($this->mapper->isBuiltInProvider('apple'));
         self::assertTrue($this->mapper->isBuiltInProvider('facebook'));
+        self::assertTrue($this->mapper->isBuiltInProvider('github'));
         self::assertTrue($this->mapper->isBuiltInProvider('oidc'));
     }
 

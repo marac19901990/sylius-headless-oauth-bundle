@@ -18,6 +18,7 @@ final class ProviderFieldMapper
         'google' => 'googleId',
         'apple' => 'appleId',
         'facebook' => 'facebookId',
+        'github' => 'githubId',
         'oidc' => 'oidcId',
     ];
 
@@ -58,6 +59,7 @@ final class ProviderFieldMapper
             'google' => $entity->setGoogleId($providerId),
             'apple' => $entity->setAppleId($providerId),
             'facebook' => $entity->setFacebookId($providerId),
+            'github' => $entity->setGithubId($providerId),
             // Any OIDC or custom provider uses the generic oidcId field
             default => $entity->setOidcId($providerId),
         };
@@ -77,6 +79,7 @@ final class ProviderFieldMapper
             'google' => $entity->getGoogleId(),
             'apple' => $entity->getAppleId(),
             'facebook' => $entity->getFacebookId(),
+            'github' => $entity->getGithubId(),
             // Any OIDC or custom provider uses the generic oidcId field
             default => $entity->getOidcId(),
         };

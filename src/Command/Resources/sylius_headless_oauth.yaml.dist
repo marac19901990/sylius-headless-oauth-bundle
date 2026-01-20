@@ -39,6 +39,13 @@ sylius_headless_oauth:
             client_id: '%env(FACEBOOK_CLIENT_ID)%'
             client_secret: '%env(FACEBOOK_CLIENT_SECRET)%'
 
+        # GitHub OAuth
+        # Setup: https://github.com/settings/developers
+        github:
+            enabled: false
+            client_id: '%env(GITHUB_CLIENT_ID)%'
+            client_secret: '%env(GITHUB_CLIENT_SECRET)%'
+
         # Generic OpenID Connect Providers
         # Use this section for Keycloak, Auth0, Okta, Azure AD, etc.
         # oidc:

@@ -68,6 +68,7 @@ final class ProviderDiscoveryAction
             'google' => 'Google',
             'apple' => 'Apple',
             'facebook' => 'Facebook',
+            'github' => 'GitHub',
             'keycloak' => 'Keycloak',
             'auth0' => 'Auth0',
             'okta' => 'Okta',
