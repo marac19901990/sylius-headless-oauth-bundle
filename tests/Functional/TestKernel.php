@@ -109,7 +109,7 @@ final class TestKernel extends Kernel
         $container->extension('doctrine', [
             'dbal' => [
                 'driver' => 'pdo_sqlite',
-                'url' => 'sqlite:///:memory:',
+                'path' => '%kernel.cache_dir%/test.db',
             ],
             'orm' => [
                 'auto_generate_proxy_classes' => true,

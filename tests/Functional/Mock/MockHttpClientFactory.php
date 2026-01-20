@@ -158,10 +158,15 @@ final class MockHttpClientFactory
         ]));
     }
 
-    public function create(): Client
+    public static function createClient(): Client
     {
         $handlerStack = HandlerStack::create(self::getMockHandler());
 
         return new Client(['handler' => $handlerStack]);
+    }
+
+    public function create(): Client
+    {
+        return self::createClient();
     }
 }

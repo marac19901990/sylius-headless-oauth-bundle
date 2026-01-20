@@ -18,14 +18,11 @@ services:
         arguments:
             - '@doctrine'
 
-    # Mock HTTP Client Factory - creates Guzzle client with MockHandler
-    test.http_client_factory:
-        class: Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Mock\MockHttpClientFactory
-
-    # Override the OAuth HTTP Client with mock
+    # Mock HTTP Client - replaces the bundle's OAuthHttpClient with a mock
     Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient:
         class: GuzzleHttp\Client
-        factory: ['@test.http_client_factory', 'create']
+        factory: ['Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Mock\MockHttpClientFactory', 'createClient']
+        public: true
 
     # Alias Sylius services to test services
     sylius.repository.customer:
