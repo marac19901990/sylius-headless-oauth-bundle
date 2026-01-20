@@ -7,9 +7,10 @@ namespace Marac\SyliusHeadlessOAuthBundle\Provider;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
+use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 
-final class GoogleProvider implements OAuthProviderInterface
+final class GoogleProvider implements ConfigurableOAuthProviderInterface, RefreshableOAuthProviderInterface
 {
     private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
     private const USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
@@ -48,6 +49,24 @@ final class GoogleProvider implements OAuthProviderInterface
         return $this->enabled && self::PROVIDER_NAME === strtolower($provider);
     }
 
+    public function getName(): string
+    {
+        return self::PROVIDER_NAME;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function getCredentialStatus(): array
+    {
+        return [
+            'client_id' => !empty($this->clientId) && $this->clientId !== '%env(GOOGLE_CLIENT_ID)%',
+            'client_secret' => !empty($this->clientSecret) && $this->clientSecret !== '%env(GOOGLE_CLIENT_SECRET)%',
+        ];
+    }
+
     public function getUserData(string $code, string $redirectUri): OAuthUserData
     {
         $tokens = $this->exchangeCodeForTokens($code, $redirectUri);
@@ -59,7 +78,58 @@ final class GoogleProvider implements OAuthProviderInterface
             email: $userInfo['email'],
             firstName: $userInfo['given_name'] ?? null,
             lastName: $userInfo['family_name'] ?? null,
+            refreshToken: $tokens['refresh_token'] ?? null,
         );
+    }
+
+    public function supportsRefresh(): bool
+    {
+        return true;
+    }
+
+    public function getUserDataFromAccessToken(string $accessToken): OAuthUserData
+    {
+        $userInfo = $this->fetchUserInfo($accessToken);
+
+        return new OAuthUserData(
+            provider: self::PROVIDER_NAME,
+            providerId: $userInfo['id'],
+            email: $userInfo['email'],
+            firstName: $userInfo['given_name'] ?? null,
+            lastName: $userInfo['family_name'] ?? null,
+        );
+    }
+
+    public function refreshTokens(string $refreshToken): OAuthTokenData
+    {
+        try {
+            $response = $this->httpClient->request('POST', self::TOKEN_URL, [
+                'form_params' => [
+                    'client_id' => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'refresh_token' => $refreshToken,
+                    'grant_type' => 'refresh_token',
+                ],
+            ]);
+
+            $data = json_decode($response->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
+
+            if (!isset($data['access_token'])) {
+                throw new OAuthException('Google refresh token response missing access_token');
+            }
+
+            // Google reuses the same refresh token (doesn't rotate)
+            return new OAuthTokenData(
+                accessToken: $data['access_token'],
+                refreshToken: $refreshToken,
+                expiresIn: $data['expires_in'] ?? null,
+                tokenType: $data['token_type'] ?? null,
+            );
+        } catch (GuzzleException $e) {
+            throw new OAuthException('Failed to refresh Google tokens: ' . $e->getMessage(), 0, $e);
+        } catch (\JsonException $e) {
+            throw new OAuthException('Failed to parse Google refresh response: ' . $e->getMessage(), 0, $e);
+        }
     }
 
     /**

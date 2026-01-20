@@ -12,6 +12,7 @@ final readonly class OAuthUserData
         public string $email,
         public ?string $firstName = null,
         public ?string $lastName = null,
+        public ?string $refreshToken = null,
     ) {
     }
 }

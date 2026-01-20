@@ -8,6 +8,7 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInterface;
+use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 
 /**
@@ -17,7 +18,7 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
  * After that, you only get email and sub (Apple ID). The UserResolver
  * must capture the name on first login or it's lost forever.
  */
-final class AppleProvider implements OAuthProviderInterface
+final class AppleProvider implements ConfigurableOAuthProviderInterface, RefreshableOAuthProviderInterface
 {
     private const TOKEN_URL = 'https://appleid.apple.com/auth/token';
     private const PROVIDER_NAME = 'apple';
@@ -48,6 +49,23 @@ final class AppleProvider implements OAuthProviderInterface
         return $this->enabled && self::PROVIDER_NAME === strtolower($provider);
     }
 
+    public function getName(): string
+    {
+        return self::PROVIDER_NAME;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function getCredentialStatus(): array
+    {
+        return [
+            'client_id' => !empty($this->clientId) && $this->clientId !== '%env(APPLE_CLIENT_ID)%',
+        ];
+    }
+
     public function getUserData(string $code, string $redirectUri): OAuthUserData
     {
         $tokens = $this->exchangeCodeForTokens($code, $redirectUri);
@@ -59,7 +77,76 @@ final class AppleProvider implements OAuthProviderInterface
             email: $idTokenData['email'],
             firstName: $idTokenData['firstName'] ?? null,
             lastName: $idTokenData['lastName'] ?? null,
+            refreshToken: $tokens['refresh_token'] ?? null,
         );
+    }
+
+    public function supportsRefresh(): bool
+    {
+        return true;
+    }
+
+    public function getUserDataFromAccessToken(string $accessToken): OAuthUserData
+    {
+        // Apple doesn't have a userinfo endpoint like Google.
+        // For Apple, we use the id_token from the refresh response.
+        // This method signature exists for interface compatibility.
+        // The actual implementation uses decodeIdTokenForUserData with the id_token.
+        throw new OAuthException(
+            'Apple does not support fetching user data from access token. ' .
+            'Use the id_token from the refresh response instead.'
+        );
+    }
+
+    /**
+     * Get user data from an id_token (used during refresh flow).
+     */
+    public function getUserDataFromIdToken(string $idToken): OAuthUserData
+    {
+        $data = $this->decodeIdToken($idToken);
+
+        return new OAuthUserData(
+            provider: self::PROVIDER_NAME,
+            providerId: $data['sub'],
+            email: $data['email'],
+            firstName: $data['firstName'] ?? null,
+            lastName: $data['lastName'] ?? null,
+        );
+    }
+
+    public function refreshTokens(string $refreshToken): OAuthTokenData
+    {
+        $clientSecret = $this->clientSecretGenerator->generate();
+
+        try {
+            $response = $this->httpClient->request('POST', self::TOKEN_URL, [
+                'form_params' => [
+                    'client_id' => $this->clientId,
+                    'client_secret' => $clientSecret,
+                    'refresh_token' => $refreshToken,
+                    'grant_type' => 'refresh_token',
+                ],
+            ]);
+
+            $data = json_decode($response->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
+
+            if (!isset($data['access_token'])) {
+                throw new OAuthException('Apple refresh token response missing access_token');
+            }
+
+            // Apple rotates refresh tokens on each use
+            return new OAuthTokenData(
+                accessToken: $data['access_token'],
+                refreshToken: $data['refresh_token'] ?? null,
+                expiresIn: $data['expires_in'] ?? null,
+                tokenType: $data['token_type'] ?? null,
+                idToken: $data['id_token'] ?? null,
+            );
+        } catch (GuzzleException $e) {
+            throw new OAuthException('Failed to refresh Apple tokens: ' . $e->getMessage(), 0, $e);
+        } catch (\JsonException $e) {
+            throw new OAuthException('Failed to parse Apple refresh response: ' . $e->getMessage(), 0, $e);
+        }
     }
 
     /**

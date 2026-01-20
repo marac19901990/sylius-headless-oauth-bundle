@@ -55,3 +55,24 @@ services:
             $jwtManager: '@lexik_jwt_authentication.jwt_manager'
         tags:
             - { name: 'api_platform.state_processor' }
+
+    # OAuth Refresh Processor (API Platform)
+    Marac\SyliusHeadlessOAuthBundle\Processor\OAuthRefreshProcessor:
+        arguments:
+            $providers: !tagged_iterator 'sylius_headless_oauth.provider'
+            $userResolver: '@Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver'
+            $jwtManager: '@lexik_jwt_authentication.jwt_manager'
+        tags:
+            - { name: 'api_platform.state_processor' }
+
+    # Provider Health Checker
+    Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker:
+        arguments:
+            $providers: !tagged_iterator 'sylius_headless_oauth.provider'
+
+    # Check Providers Command
+    Marac\SyliusHeadlessOAuthBundle\Command\CheckProvidersCommand:
+        arguments:
+            $healthChecker: '@Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker'
+        tags:
+            - { name: 'console.command' }

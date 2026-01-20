@@ -51,7 +51,7 @@ final class OAuthProcessor implements ProcessorInterface
 
         return new OAuthResponse(
             token: $token,
-            refreshToken: null, // Implement refresh token support if needed
+            refreshToken: $userData->refreshToken,
             customerId: $shopUser->getCustomer()?->getId(),
         );
     }
