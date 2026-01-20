@@ -8,7 +8,6 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 
 use function count;
 use function in_array;
-use function parse_url;
 use function rtrim;
 use function sprintf;
 use function str_starts_with;

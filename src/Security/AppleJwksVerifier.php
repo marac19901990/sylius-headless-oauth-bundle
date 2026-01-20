@@ -17,6 +17,8 @@ use Throwable;
 use UnexpectedValueException;
 
 use function count;
+use function in_array;
+use function is_array;
 use function is_string;
 
 use const JSON_THROW_ON_ERROR;
@@ -44,9 +46,9 @@ final class AppleJwksVerifier
     /**
      * Verify and decode an Apple id_token.
      *
-     * @return array{sub: string, email: string, email_verified?: bool, iss: string, aud: string, exp: int}
-     *
      * @throws OAuthException If verification fails
+     *
+     * @return array{sub: string, email: string, email_verified?: bool, iss: string, aud: string, exp: int}
      */
     public function verify(string $idToken): array
     {
@@ -107,6 +109,16 @@ final class AppleJwksVerifier
                 $e,
             );
         }
+    }
+
+    /**
+     * Clear the cached JWKS keys.
+     *
+     * Useful if keys have rotated and verification is failing.
+     */
+    public function clearCache(): void
+    {
+        $this->cache?->delete(self::CACHE_KEY);
     }
 
     /**
@@ -205,15 +217,5 @@ final class AppleJwksVerifier
                 $e,
             );
         }
-    }
-
-    /**
-     * Clear the cached JWKS keys.
-     *
-     * Useful if keys have rotated and verification is failing.
-     */
-    public function clearCache(): void
-    {
-        $this->cache?->delete(self::CACHE_KEY);
     }
 }

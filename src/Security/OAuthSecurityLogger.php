@@ -7,6 +7,9 @@ namespace Marac\SyliusHeadlessOAuthBundle\Security;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
+use function count;
+use function strlen;
+
 /**
  * Security event logger for OAuth operations.
  *
