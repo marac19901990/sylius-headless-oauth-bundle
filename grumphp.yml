@@ -1,0 +1,11 @@
+grumphp:
+    hooks_dir: ~
+    hooks_preset: local
+    stop_on_failure: true
+    ignore_unstaged_changes: false
+    tasks:
+        phpcsfixer:
+            config: .php-cs-fixer.dist.php
+            allow_risky: true
+        phpstan:
+            configuration: phpstan.neon.dist
