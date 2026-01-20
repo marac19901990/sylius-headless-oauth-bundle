@@ -119,6 +119,14 @@ services:
         tags:
             - { name: 'console.command' }
 
+    # Install Command
+    Marac\SyliusHeadlessOAuthBundle\Command\InstallCommand:
+        arguments:
+            $healthChecker: '@Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker'
+            $projectDir: '%kernel.project_dir%'
+        tags:
+            - { name: 'console.command' }
+
     # Twig Extension for OAuth Provider Display
     Marac\SyliusHeadlessOAuthBundle\Twig\OAuthExtension:
         tags:
@@ -129,3 +137,8 @@ services:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
             $cache: '@?cache.app'
+
+    # Provider Discovery Action (API)
+    Marac\SyliusHeadlessOAuthBundle\Api\Action\ProviderDiscoveryAction:
+        arguments:
+            $providers: !tagged_iterator 'sylius_headless_oauth.provider'

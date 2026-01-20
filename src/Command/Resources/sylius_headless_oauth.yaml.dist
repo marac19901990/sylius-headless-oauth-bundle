@@ -1,0 +1,70 @@
+# SyliusHeadlessOAuthBundle Configuration
+# Full documentation: https://github.com/your-org/sylius-headless-oauth-bundle
+
+sylius_headless_oauth:
+    # Security settings
+    security:
+        # Allowed redirect URIs for OAuth callbacks (required for production)
+        # Add your frontend application URLs here
+        allowed_redirect_uris:
+            # - 'https://myapp.com/oauth/callback'
+            # - 'https://staging.myapp.com/oauth/callback'
+            # - 'http://localhost:3000/oauth/callback'  # Development only
+
+        # Enable/disable Apple JWT verification (recommended: true for production)
+        verify_apple_jwt: true
+
+    # OAuth Provider Configuration
+    providers:
+        # Google OAuth 2.0
+        # Setup: https://console.developers.google.com/
+        google:
+            enabled: false  # Set to true and configure env vars to enable
+            client_id: '%env(GOOGLE_CLIENT_ID)%'
+            client_secret: '%env(GOOGLE_CLIENT_SECRET)%'
+
+        # Apple Sign In
+        # Setup: https://developer.apple.com/sign-in-with-apple/
+        apple:
+            enabled: false
+            client_id: '%env(APPLE_CLIENT_ID)%'
+            team_id: '%env(APPLE_TEAM_ID)%'
+            key_id: '%env(APPLE_KEY_ID)%'
+            private_key_path: '%env(APPLE_PRIVATE_KEY_PATH)%'
+
+        # Facebook Login
+        # Setup: https://developers.facebook.com/apps/
+        facebook:
+            enabled: false
+            client_id: '%env(FACEBOOK_CLIENT_ID)%'
+            client_secret: '%env(FACEBOOK_CLIENT_SECRET)%'
+
+        # Generic OpenID Connect Providers
+        # Use this section for Keycloak, Auth0, Okta, Azure AD, etc.
+        # oidc:
+        #     # Example: Keycloak configuration
+        #     keycloak:
+        #         enabled: true
+        #         issuer_url: '%env(KEYCLOAK_ISSUER_URL)%'  # e.g., https://keycloak.example.com/realms/my-realm
+        #         client_id: '%env(KEYCLOAK_CLIENT_ID)%'
+        #         client_secret: '%env(KEYCLOAK_CLIENT_SECRET)%'
+        #         # Optional: Custom field mapping
+        #         # field_mapping:
+        #         #     id: 'sub'
+        #         #     email: 'email'
+        #         #     first_name: 'given_name'
+        #         #     last_name: 'family_name'
+        #
+        #     # Example: Auth0 configuration
+        #     auth0:
+        #         enabled: true
+        #         issuer_url: '%env(AUTH0_ISSUER_URL)%'  # e.g., https://your-tenant.auth0.com/
+        #         client_id: '%env(AUTH0_CLIENT_ID)%'
+        #         client_secret: '%env(AUTH0_CLIENT_SECRET)%'
+        #
+        #     # Example: Okta configuration
+        #     okta:
+        #         enabled: true
+        #         issuer_url: '%env(OKTA_ISSUER_URL)%'  # e.g., https://your-org.okta.com/oauth2/default
+        #         client_id: '%env(OKTA_CLIENT_ID)%'
+        #         client_secret: '%env(OKTA_CLIENT_SECRET)%'
