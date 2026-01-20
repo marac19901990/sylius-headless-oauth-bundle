@@ -13,4 +13,8 @@ interface OAuthIdentityInterface
     public function getAppleId(): ?string;
 
     public function setAppleId(?string $appleId): void;
+
+    public function getFacebookId(): ?string;
+
+    public function setFacebookId(?string $facebookId): void;
 }

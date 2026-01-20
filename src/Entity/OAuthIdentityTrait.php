@@ -30,6 +30,9 @@ trait OAuthIdentityTrait
     #[ORM\Column(type: 'string', length: 255, nullable: true, unique: true)]
     private ?string $appleId = null;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true, unique: true)]
+    private ?string $facebookId = null;
+
     public function getGoogleId(): ?string
     {
         return $this->googleId;
@@ -48,5 +51,15 @@ trait OAuthIdentityTrait
     public function setAppleId(?string $appleId): void
     {
         $this->appleId = $appleId;
+    }
+
+    public function getFacebookId(): ?string
+    {
+        return $this->facebookId;
+    }
+
+    public function setFacebookId(?string $facebookId): void
+    {
+        $this->facebookId = $facebookId;
     }
 }

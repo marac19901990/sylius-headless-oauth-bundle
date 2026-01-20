@@ -35,6 +35,10 @@ final class SyliusHeadlessOAuthExtension extends Extension
         $container->setParameter('sylius_headless_oauth.providers.apple.key_id', $config['providers']['apple']['key_id']);
         $container->setParameter('sylius_headless_oauth.providers.apple.private_key_path', $config['providers']['apple']['private_key_path']);
 
+        $container->setParameter('sylius_headless_oauth.providers.facebook.enabled', $config['providers']['facebook']['enabled']);
+        $container->setParameter('sylius_headless_oauth.providers.facebook.client_id', $config['providers']['facebook']['client_id']);
+        $container->setParameter('sylius_headless_oauth.providers.facebook.client_secret', $config['providers']['facebook']['client_secret']);
+
         $container->registerForAutoconfiguration(OAuthProviderInterface::class)
             ->addTag('sylius_headless_oauth.provider');
     }

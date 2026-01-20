@@ -30,6 +30,7 @@ final class ProviderFieldMapperTest extends TestCase
     {
         yield 'google' => ['google', 'googleId'];
         yield 'apple' => ['apple', 'appleId'];
+        yield 'facebook' => ['facebook', 'facebookId'];
     }
 
     #[Test]
@@ -43,9 +44,9 @@ final class ProviderFieldMapperTest extends TestCase
     public function throwsExceptionForUnknownProvider(): void
     {
         $this->expectException(OAuthException::class);
-        $this->expectExceptionMessage('Unknown provider: facebook');
+        $this->expectExceptionMessage('Unknown provider: twitter');
 
-        $this->mapper->getFieldName('facebook');
+        $this->mapper->getFieldName('twitter');
     }
 
     #[Test]
@@ -71,6 +72,18 @@ final class ProviderFieldMapperTest extends TestCase
     }
 
     #[Test]
+    public function setsFacebookIdOnEntity(): void
+    {
+        $entity = $this->createMockEntity();
+
+        $this->mapper->setProviderId($entity, 'facebook', 'facebook-789');
+
+        self::assertNull($entity->getGoogleId());
+        self::assertNull($entity->getAppleId());
+        self::assertSame('facebook-789', $entity->getFacebookId());
+    }
+
+    #[Test]
     public function throwsExceptionWhenSettingUnknownProvider(): void
     {
         $entity = $this->createMockEntity();
@@ -88,7 +101,8 @@ final class ProviderFieldMapperTest extends TestCase
 
         self::assertContains('google', $providers);
         self::assertContains('apple', $providers);
-        self::assertCount(2, $providers);
+        self::assertContains('facebook', $providers);
+        self::assertCount(3, $providers);
     }
 
     #[Test]
@@ -96,13 +110,14 @@ final class ProviderFieldMapperTest extends TestCase
     {
         self::assertTrue($this->mapper->isSupported('google'));
         self::assertTrue($this->mapper->isSupported('apple'));
+        self::assertTrue($this->mapper->isSupported('facebook'));
     }
 
     #[Test]
     public function isSupportedReturnsFalseForUnknownProviders(): void
     {
-        self::assertFalse($this->mapper->isSupported('facebook'));
         self::assertFalse($this->mapper->isSupported('twitter'));
+        self::assertFalse($this->mapper->isSupported('github'));
         self::assertFalse($this->mapper->isSupported(''));
     }
 

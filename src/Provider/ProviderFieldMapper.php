@@ -20,6 +20,7 @@ final class ProviderFieldMapper
     private const PROVIDER_FIELD_MAP = [
         'google' => 'googleId',
         'apple' => 'appleId',
+        'facebook' => 'facebookId',
     ];
 
     /**
@@ -54,6 +55,7 @@ final class ProviderFieldMapper
         match ($provider) {
             'google' => $entity->setGoogleId($providerId),
             'apple' => $entity->setAppleId($providerId),
+            'facebook' => $entity->setFacebookId($providerId),
             default => throw new OAuthException(sprintf('Unknown provider: %s', $provider)),
         };
     }
