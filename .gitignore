@@ -29,6 +29,9 @@ Thumbs.db
 *.key
 /config/secrets/
 
+# Exception: test JWT keys (no security value)
+!tests/Functional/config/jwt/*.pem
+
 # Build artifacts
 /build/
 /dist/
