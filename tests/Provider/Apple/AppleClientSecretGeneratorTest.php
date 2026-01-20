@@ -193,4 +193,69 @@ class AppleClientSecretGeneratorTest extends TestCase
 
         return base64_decode(strtr($data, '-_', '+/'), true) ?: '';
     }
+
+    public function testThrowsExceptionOnEmptyClientId(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
+
+        new AppleClientSecretGenerator(
+            clientId: '',
+            teamId: 'TEAM123456',
+            keyId: 'KEY123456',
+            privateKeyPath: $this->testKeyPath,
+        );
+    }
+
+    public function testThrowsExceptionOnEmptyTeamId(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_TEAM_ID is not configured');
+
+        new AppleClientSecretGenerator(
+            clientId: 'com.test.app',
+            teamId: '',
+            keyId: 'KEY123456',
+            privateKeyPath: $this->testKeyPath,
+        );
+    }
+
+    public function testThrowsExceptionOnEmptyKeyId(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_KEY_ID is not configured');
+
+        new AppleClientSecretGenerator(
+            clientId: 'com.test.app',
+            teamId: 'TEAM123456',
+            keyId: '',
+            privateKeyPath: $this->testKeyPath,
+        );
+    }
+
+    public function testThrowsExceptionOnEmptyPrivateKeyPath(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_PRIVATE_KEY_PATH is not configured');
+
+        new AppleClientSecretGenerator(
+            clientId: 'com.test.app',
+            teamId: 'TEAM123456',
+            keyId: 'KEY123456',
+            privateKeyPath: '',
+        );
+    }
+
+    public function testThrowsExceptionOnUnresolvedEnvPlaceholder(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_TEAM_ID is not configured');
+
+        new AppleClientSecretGenerator(
+            clientId: 'com.test.app',
+            teamId: '%env(APPLE_TEAM_ID)%',
+            keyId: 'KEY123456',
+            privateKeyPath: $this->testKeyPath,
+        );
+    }
 }

@@ -26,6 +26,38 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
         private readonly string $keyId,
         private readonly string $privateKeyPath,
     ) {
+        $this->validateCredentials();
+    }
+
+    private function validateCredentials(): void
+    {
+        if (empty($this->clientId) || $this->clientId === '%env(APPLE_CLIENT_ID)%') {
+            throw new \InvalidArgumentException(
+                'Apple OAuth: APPLE_CLIENT_ID is not configured. ' .
+                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
+            );
+        }
+
+        if (empty($this->teamId) || $this->teamId === '%env(APPLE_TEAM_ID)%') {
+            throw new \InvalidArgumentException(
+                'Apple OAuth: APPLE_TEAM_ID is not configured. ' .
+                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
+            );
+        }
+
+        if (empty($this->keyId) || $this->keyId === '%env(APPLE_KEY_ID)%') {
+            throw new \InvalidArgumentException(
+                'Apple OAuth: APPLE_KEY_ID is not configured. ' .
+                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
+            );
+        }
+
+        if (empty($this->privateKeyPath) || $this->privateKeyPath === '%env(APPLE_PRIVATE_KEY_PATH)%') {
+            throw new \InvalidArgumentException(
+                'Apple OAuth: APPLE_PRIVATE_KEY_PATH is not configured. ' .
+                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
+            );
+        }
     }
 
     /**

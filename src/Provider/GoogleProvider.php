@@ -21,6 +21,26 @@ final class GoogleProvider implements OAuthProviderInterface
         private readonly string $clientSecret,
         private readonly bool $enabled = true,
     ) {
+        if ($this->enabled) {
+            $this->validateCredentials();
+        }
+    }
+
+    private function validateCredentials(): void
+    {
+        if (empty($this->clientId) || $this->clientId === '%env(GOOGLE_CLIENT_ID)%') {
+            throw new \InvalidArgumentException(
+                'Google OAuth is enabled but GOOGLE_CLIENT_ID is not configured. ' .
+                'Set the environment variable or disable Google: sylius_headless_oauth.providers.google.enabled: false'
+            );
+        }
+
+        if (empty($this->clientSecret) || $this->clientSecret === '%env(GOOGLE_CLIENT_SECRET)%') {
+            throw new \InvalidArgumentException(
+                'Google OAuth is enabled but GOOGLE_CLIENT_SECRET is not configured. ' .
+                'Set the environment variable or disable Google: sylius_headless_oauth.providers.google.enabled: false'
+            );
+        }
     }
 
     public function supports(string $provider): bool

@@ -28,6 +28,19 @@ final class AppleProvider implements OAuthProviderInterface
         private readonly string $clientId,
         private readonly bool $enabled = true,
     ) {
+        if ($this->enabled) {
+            $this->validateCredentials();
+        }
+    }
+
+    private function validateCredentials(): void
+    {
+        if (empty($this->clientId) || $this->clientId === '%env(APPLE_CLIENT_ID)%') {
+            throw new \InvalidArgumentException(
+                'Apple OAuth is enabled but APPLE_CLIENT_ID is not configured. ' .
+                'Set the environment variable or disable Apple: sylius_headless_oauth.providers.apple.enabled: false'
+            );
+        }
     }
 
     public function supports(string $provider): bool

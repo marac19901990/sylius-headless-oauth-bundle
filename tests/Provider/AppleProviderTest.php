@@ -265,4 +265,42 @@ class AppleProviderTest extends TestCase
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
+
+    public function testThrowsExceptionOnEmptyClientId(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
+
+        new AppleProvider(
+            httpClient: $this->httpClient,
+            clientSecretGenerator: $this->clientSecretGenerator,
+            clientId: '',
+            enabled: true,
+        );
+    }
+
+    public function testThrowsExceptionOnUnresolvedEnvPlaceholder(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
+
+        new AppleProvider(
+            httpClient: $this->httpClient,
+            clientSecretGenerator: $this->clientSecretGenerator,
+            clientId: '%env(APPLE_CLIENT_ID)%',
+            enabled: true,
+        );
+    }
+
+    public function testNoValidationWhenDisabled(): void
+    {
+        $provider = new AppleProvider(
+            httpClient: $this->httpClient,
+            clientSecretGenerator: $this->clientSecretGenerator,
+            clientId: '',
+            enabled: false,
+        );
+
+        $this->assertFalse($provider->supports('apple'));
+    }
 }
