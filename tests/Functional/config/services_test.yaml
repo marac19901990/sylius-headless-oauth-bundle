@@ -14,10 +14,9 @@ services:
 
     # Test Customer Repository
     test.repository.customer:
-        class: Doctrine\ORM\EntityRepository
-        factory: ['@doctrine.orm.entity_manager', 'getRepository']
+        class: Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Repository\TestCustomerRepository
         arguments:
-            - 'Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Entity\TestCustomer'
+            - '@doctrine'
 
     # Mock HTTP Client Factory - creates Guzzle client with MockHandler
     test.http_client_factory:
