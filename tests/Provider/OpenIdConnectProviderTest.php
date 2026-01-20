@@ -13,6 +13,7 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OpenIdConnectProvider;
 use Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryServiceInterface;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -21,16 +22,19 @@ class OpenIdConnectProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
     private OidcDiscoveryServiceInterface&MockObject $discoveryService;
+    private CredentialValidator $credentialValidator;
     private OpenIdConnectProvider $provider;
 
     protected function setUp(): void
     {
         $this->httpClient = $this->createMock(ClientInterface::class);
         $this->discoveryService = $this->createMock(OidcDiscoveryServiceInterface::class);
+        $this->credentialValidator = new CredentialValidator();
 
         $this->provider = new OpenIdConnectProvider(
             httpClient: $this->httpClient,
             discoveryService: $this->discoveryService,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             issuerUrl: 'https://keycloak.example.com/realms/test',
@@ -60,6 +64,7 @@ class OpenIdConnectProviderTest extends TestCase
         $disabledProvider = new OpenIdConnectProvider(
             httpClient: $this->httpClient,
             discoveryService: $this->discoveryService,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             issuerUrl: 'https://keycloak.example.com/realms/test',
@@ -549,6 +554,7 @@ class OpenIdConnectProviderTest extends TestCase
         new OpenIdConnectProvider(
             httpClient: $this->httpClient,
             discoveryService: $this->discoveryService,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             issuerUrl: '',
@@ -564,6 +570,7 @@ class OpenIdConnectProviderTest extends TestCase
         new OpenIdConnectProvider(
             httpClient: $this->httpClient,
             discoveryService: $this->discoveryService,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             issuerUrl: '%env(KEYCLOAK_ISSUER_URL)%',
@@ -576,6 +583,7 @@ class OpenIdConnectProviderTest extends TestCase
         $provider = new OpenIdConnectProvider(
             httpClient: $this->httpClient,
             discoveryService: $this->discoveryService,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: '',
             issuerUrl: '',
@@ -590,6 +598,7 @@ class OpenIdConnectProviderTest extends TestCase
         $provider = new OpenIdConnectProvider(
             httpClient: $this->httpClient,
             discoveryService: $this->discoveryService,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             issuerUrl: 'https://keycloak.example.com/realms/test',

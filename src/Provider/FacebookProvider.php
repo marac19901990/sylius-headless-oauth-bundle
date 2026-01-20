@@ -21,17 +21,13 @@ final class FacebookProvider implements ConfigurableOAuthProviderInterface, Refr
     private const USERINFO_URL = 'https://graph.facebook.com/me';
     private const PROVIDER_NAME = 'facebook';
 
-    private readonly CredentialValidator $credentialValidator;
-
     public function __construct(
         private readonly ClientInterface $httpClient,
+        private readonly CredentialValidator $credentialValidator,
         private readonly string $clientId,
         private readonly string $clientSecret,
         private readonly bool $enabled = true,
-        ?CredentialValidator $credentialValidator = null,
     ) {
-        $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
-
         if ($this->enabled) {
             $this->validateCredentials();
         }
@@ -45,6 +41,11 @@ final class FacebookProvider implements ConfigurableOAuthProviderInterface, Refr
     public function getName(): string
     {
         return self::PROVIDER_NAME;
+    }
+
+    public function getDisplayName(): string
+    {
+        return 'Facebook';
     }
 
     public function isEnabled(): bool

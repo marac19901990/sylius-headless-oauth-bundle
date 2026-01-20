@@ -11,6 +11,7 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\AppleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -18,12 +19,14 @@ class AppleProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
     private AppleClientSecretGeneratorInterface&MockObject $clientSecretGenerator;
+    private CredentialValidator $credentialValidator;
     private AppleProvider $provider;
 
     protected function setUp(): void
     {
         $this->httpClient = $this->createMock(ClientInterface::class);
         $this->clientSecretGenerator = $this->createMock(AppleClientSecretGeneratorInterface::class);
+        $this->credentialValidator = new CredentialValidator();
 
         $this->clientSecretGenerator
             ->method('generate')
@@ -32,6 +35,7 @@ class AppleProviderTest extends TestCase
         $this->provider = new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             enabled: true,
         );
@@ -56,6 +60,7 @@ class AppleProviderTest extends TestCase
         $disabledProvider = new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             enabled: false,
         );
@@ -257,6 +262,7 @@ class AppleProviderTest extends TestCase
         new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             enabled: true,
         );
@@ -270,6 +276,7 @@ class AppleProviderTest extends TestCase
         new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
+            credentialValidator: $this->credentialValidator,
             clientId: '%env(APPLE_CLIENT_ID)%',
             enabled: true,
         );
@@ -280,6 +287,7 @@ class AppleProviderTest extends TestCase
         $provider = new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             enabled: false,
         );
@@ -302,6 +310,7 @@ class AppleProviderTest extends TestCase
         $disabledProvider = new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             enabled: false,
         );

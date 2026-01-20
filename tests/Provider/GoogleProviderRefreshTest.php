@@ -10,19 +10,23 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class GoogleProviderRefreshTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
+    private CredentialValidator $credentialValidator;
     private GoogleProvider $provider;
 
     protected function setUp(): void
     {
         $this->httpClient = $this->createMock(ClientInterface::class);
+        $this->credentialValidator = new CredentialValidator();
         $this->provider = new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -168,6 +172,7 @@ class GoogleProviderRefreshTest extends TestCase
     {
         $provider = new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '%env(GOOGLE_CLIENT_ID)%',
             clientSecret: 'valid-secret',
             enabled: false, // Disabled to avoid validation

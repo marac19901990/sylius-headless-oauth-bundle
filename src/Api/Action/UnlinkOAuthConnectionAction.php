@@ -37,14 +37,11 @@ use Symfony\Component\HttpKernel\Attribute\AsController;
 #[AsController]
 final class UnlinkOAuthConnectionAction
 {
-    private readonly ProviderFieldMapper $fieldMapper;
-
     public function __construct(
         private readonly Security $security,
         private readonly EntityManagerInterface $entityManager,
-        ?ProviderFieldMapper $fieldMapper = null,
+        private readonly ProviderFieldMapper $fieldMapper,
     ) {
-        $this->fieldMapper = $fieldMapper ?? new ProviderFieldMapper();
     }
 
     public function __invoke(string $provider): JsonResponse

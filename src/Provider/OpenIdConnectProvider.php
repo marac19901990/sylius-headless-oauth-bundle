@@ -40,11 +40,10 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
 {
     private const PROVIDER_NAME = 'oidc';
 
-    private readonly CredentialValidator $credentialValidator;
-
     public function __construct(
         private readonly ClientInterface $httpClient,
         private readonly OidcDiscoveryServiceInterface $discoveryService,
+        private readonly CredentialValidator $credentialValidator,
         private readonly string $clientId,
         private readonly string $clientSecret,
         private readonly string $issuerUrl,
@@ -52,10 +51,7 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
         private readonly bool $verifyJwt = true,
         private readonly string $providerName = self::PROVIDER_NAME,
         private readonly string $scopes = 'openid email profile',
-        ?CredentialValidator $credentialValidator = null,
     ) {
-        $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
-
         if ($this->enabled) {
             $this->validateCredentials();
         }
@@ -69,6 +65,11 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
     public function getName(): string
     {
         return $this->providerName;
+    }
+
+    public function getDisplayName(): string
+    {
+        return ucfirst($this->providerName);
     }
 
     public function isEnabled(): bool

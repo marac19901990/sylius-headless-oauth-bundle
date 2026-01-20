@@ -38,6 +38,7 @@ services:
     # Apple Client Secret Generator
     Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator:
         arguments:
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
             $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
             $teamId: '%sylius_headless_oauth.providers.apple.team_id%'
             $keyId: '%sylius_headless_oauth.providers.apple.key_id%'
@@ -47,6 +48,7 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
             $clientId: '%sylius_headless_oauth.providers.google.client_id%'
             $clientSecret: '%sylius_headless_oauth.providers.google.client_secret%'
             $enabled: '%sylius_headless_oauth.providers.google.enabled%'
@@ -58,6 +60,7 @@ services:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
             $clientSecretGenerator: '@Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
             $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
             $enabled: '%sylius_headless_oauth.providers.apple.enabled%'
             $jwksVerifier: '@Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifier'
@@ -70,6 +73,7 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Provider\FacebookProvider:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
             $clientId: '%sylius_headless_oauth.providers.facebook.client_id%'
             $clientSecret: '%sylius_headless_oauth.providers.facebook.client_secret%'
             $enabled: '%sylius_headless_oauth.providers.facebook.enabled%'
@@ -80,6 +84,7 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Provider\GitHubProvider:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator'
             $clientId: '%sylius_headless_oauth.providers.github.client_id%'
             $clientSecret: '%sylius_headless_oauth.providers.github.client_secret%'
             $enabled: '%sylius_headless_oauth.providers.github.enabled%'
@@ -93,6 +98,7 @@ services:
             $customerFactory: '@sylius.factory.customer'
             $shopUserFactory: '@sylius.factory.shop_user'
             $entityManager: '@doctrine.orm.entity_manager'
+            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper'
             $eventDispatcher: '@event_dispatcher'
 
     # OAuth Processor (API Platform)
@@ -162,9 +168,11 @@ services:
         arguments:
             $security: '@security.helper'
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
+            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper'
 
     # Unlink OAuth Connection Action (API)
     Marac\SyliusHeadlessOAuthBundle\Api\Action\UnlinkOAuthConnectionAction:
         arguments:
             $security: '@security.helper'
             $entityManager: '@doctrine.orm.entity_manager'
+            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper'

@@ -63,14 +63,15 @@ class ProviderDiscoveryActionTest extends TestCase
 
     public function testMapsDisplayNamesCorrectly(): void
     {
+        // Display names now come from the provider's getDisplayName() method
         $providers = [
-            $this->createConfigurableProvider('google', true),
-            $this->createConfigurableProvider('apple', true),
-            $this->createConfigurableProvider('facebook', true),
-            $this->createConfigurableProvider('keycloak', true),
-            $this->createConfigurableProvider('auth0', true),
-            $this->createConfigurableProvider('okta', true),
-            $this->createConfigurableProvider('azure', true),
+            $this->createConfigurableProvider('google', true, 'Google'),
+            $this->createConfigurableProvider('apple', true, 'Apple'),
+            $this->createConfigurableProvider('facebook', true, 'Facebook'),
+            $this->createConfigurableProvider('keycloak', true, 'Keycloak'),
+            $this->createConfigurableProvider('auth0', true, 'Auth0'),
+            $this->createConfigurableProvider('okta', true, 'Okta'),
+            $this->createConfigurableProvider('azure', true, 'Microsoft Azure'),
         ];
 
         $action = new ProviderDiscoveryAction($providers);
@@ -107,10 +108,11 @@ class ProviderDiscoveryActionTest extends TestCase
         $this->assertSame('Mycompany', $data['providers'][0]['displayName']);
     }
 
-    public function testIgnoresNonConfigurableProviders(): void
+    public function testIncludesNonConfigurableProvidersAsEnabled(): void
     {
+        // Non-configurable providers are assumed to be enabled (no way to check)
         $nonConfigurable = $this->createMock(OAuthProviderInterface::class);
-        $configurable = $this->createConfigurableProvider('google', true);
+        $configurable = $this->createConfigurableProvider('google', true, 'Google');
 
         $action = new ProviderDiscoveryAction([$nonConfigurable, $configurable]);
 
@@ -118,8 +120,12 @@ class ProviderDiscoveryActionTest extends TestCase
 
         $data = json_decode($response->getContent(), true);
 
-        $this->assertCount(1, $data['providers']);
-        $this->assertSame('google', $data['providers'][0]['name']);
+        // Both providers are included - non-configurable assumed enabled
+        $this->assertCount(2, $data['providers']);
+
+        $names = array_column($data['providers'], 'name');
+        $this->assertContains('unknown', $names); // Non-configurable gets 'unknown' as name
+        $this->assertContains('google', $names);
     }
 
     public function testResponseHasCorrectContentType(): void
@@ -131,12 +137,13 @@ class ProviderDiscoveryActionTest extends TestCase
         $this->assertSame('application/json', $response->headers->get('Content-Type'));
     }
 
-    private function createConfigurableProvider(string $name, bool $enabled): ConfigurableOAuthProviderInterface
+    private function createConfigurableProvider(string $name, bool $enabled, ?string $displayName = null): ConfigurableOAuthProviderInterface
     {
         $provider = $this->createMock(ConfigurableOAuthProviderInterface::class);
 
         $provider->method('getName')->willReturn($name);
         $provider->method('isEnabled')->willReturn($enabled);
+        $provider->method('getDisplayName')->willReturn($displayName ?? ucfirst($name));
 
         return $provider;
     }

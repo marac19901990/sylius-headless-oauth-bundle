@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\GitHubProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -19,13 +20,16 @@ use RuntimeException;
 class GitHubProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
+    private CredentialValidator $credentialValidator;
     private GitHubProvider $provider;
 
     protected function setUp(): void
     {
         $this->httpClient = $this->createMock(ClientInterface::class);
+        $this->credentialValidator = new CredentialValidator();
         $this->provider = new GitHubProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -51,6 +55,7 @@ class GitHubProviderTest extends TestCase
     {
         $disabledProvider = new GitHubProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: false,
@@ -302,6 +307,7 @@ class GitHubProviderTest extends TestCase
 
         new GitHubProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -315,6 +321,7 @@ class GitHubProviderTest extends TestCase
 
         new GitHubProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: '',
             enabled: true,
@@ -328,6 +335,7 @@ class GitHubProviderTest extends TestCase
 
         new GitHubProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '%env(GITHUB_CLIENT_ID)%',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -338,6 +346,7 @@ class GitHubProviderTest extends TestCase
     {
         $provider = new GitHubProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: '',
             enabled: false,
@@ -360,6 +369,7 @@ class GitHubProviderTest extends TestCase
     {
         $disabledProvider = new GitHubProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: false,

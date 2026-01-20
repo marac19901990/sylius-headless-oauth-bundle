@@ -11,6 +11,7 @@ use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPreUserCreateEvent;
 use Marac\SyliusHeadlessOAuthBundle\Event\OAuthProviderLinkedEvent;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -27,6 +28,7 @@ class UserResolverTest extends TestCase
     private FactoryInterface&MockObject $customerFactory;
     private FactoryInterface&MockObject $shopUserFactory;
     private EntityManagerInterface&MockObject $entityManager;
+    private ProviderFieldMapper $fieldMapper;
     private EventDispatcherInterface&MockObject $eventDispatcher;
     private UserResolver $resolver;
 
@@ -36,6 +38,7 @@ class UserResolverTest extends TestCase
         $this->customerFactory = $this->createMock(FactoryInterface::class);
         $this->shopUserFactory = $this->createMock(FactoryInterface::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->fieldMapper = new ProviderFieldMapper();
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $this->resolver = new UserResolver(
@@ -43,6 +46,7 @@ class UserResolverTest extends TestCase
             customerFactory: $this->customerFactory,
             shopUserFactory: $this->shopUserFactory,
             entityManager: $this->entityManager,
+            fieldMapper: $this->fieldMapper,
             eventDispatcher: $this->eventDispatcher,
         );
     }
@@ -531,6 +535,7 @@ class UserResolverTest extends TestCase
             customerFactory: $this->customerFactory,
             shopUserFactory: $this->shopUserFactory,
             entityManager: $this->entityManager,
+            fieldMapper: $this->fieldMapper,
             eventDispatcher: null, // No event dispatcher
         );
 

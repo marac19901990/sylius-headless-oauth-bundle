@@ -31,17 +31,14 @@ use function sprintf;
  */
 final class UserResolver implements UserResolverInterface
 {
-    private readonly ProviderFieldMapper $fieldMapper;
-
     public function __construct(
         private readonly CustomerRepositoryInterface $customerRepository,
         private readonly FactoryInterface $customerFactory,
         private readonly FactoryInterface $shopUserFactory,
         private readonly EntityManagerInterface $entityManager,
+        private readonly ProviderFieldMapper $fieldMapper,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
-        ?ProviderFieldMapper $fieldMapper = null,
     ) {
-        $this->fieldMapper = $fieldMapper ?? new ProviderFieldMapper();
     }
 
     public function resolve(OAuthUserData $userData): UserResolveResult

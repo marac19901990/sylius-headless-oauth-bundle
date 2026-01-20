@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\FacebookProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -17,13 +18,16 @@ use RuntimeException;
 class FacebookProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
+    private CredentialValidator $credentialValidator;
     private FacebookProvider $provider;
 
     protected function setUp(): void
     {
         $this->httpClient = $this->createMock(ClientInterface::class);
+        $this->credentialValidator = new CredentialValidator();
         $this->provider = new FacebookProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -48,6 +52,7 @@ class FacebookProviderTest extends TestCase
     {
         $disabledProvider = new FacebookProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: false,
@@ -204,6 +209,7 @@ class FacebookProviderTest extends TestCase
 
         new FacebookProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -217,6 +223,7 @@ class FacebookProviderTest extends TestCase
 
         new FacebookProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: '',
             enabled: true,
@@ -230,6 +237,7 @@ class FacebookProviderTest extends TestCase
 
         new FacebookProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '%env(FACEBOOK_CLIENT_ID)%',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -240,6 +248,7 @@ class FacebookProviderTest extends TestCase
     {
         $provider = new FacebookProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: '',
             enabled: false,
@@ -262,6 +271,7 @@ class FacebookProviderTest extends TestCase
     {
         $disabledProvider = new FacebookProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: false,

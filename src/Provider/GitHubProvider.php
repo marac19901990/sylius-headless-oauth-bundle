@@ -38,17 +38,13 @@ final class GitHubProvider implements ConfigurableOAuthProviderInterface, Refres
     private const USER_EMAILS_URL = 'https://api.github.com/user/emails';
     private const PROVIDER_NAME = 'github';
 
-    private readonly CredentialValidator $credentialValidator;
-
     public function __construct(
         private readonly ClientInterface $httpClient,
+        private readonly CredentialValidator $credentialValidator,
         private readonly string $clientId,
         private readonly string $clientSecret,
         private readonly bool $enabled = true,
-        ?CredentialValidator $credentialValidator = null,
     ) {
-        $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
-
         if ($this->enabled) {
             $this->validateCredentials();
         }
@@ -62,6 +58,11 @@ final class GitHubProvider implements ConfigurableOAuthProviderInterface, Refres
     public function getName(): string
     {
         return self::PROVIDER_NAME;
+    }
+
+    public function getDisplayName(): string
+    {
+        return 'GitHub';
     }
 
     public function isEnabled(): bool

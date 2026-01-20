@@ -9,6 +9,7 @@ use Firebase\JWT\Key;
 use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\TestCase;
 
 use function strlen;
@@ -20,9 +21,11 @@ class AppleClientSecretGeneratorTest extends TestCase
     private string $testKeyPath = '';
     private string $testPrivateKey = '';
     private string $testPublicKey = '';
+    private CredentialValidator $credentialValidator;
 
     protected function setUp(): void
     {
+        $this->credentialValidator = new CredentialValidator();
         // Generate a test EC key pair for testing
         $keyPair = openssl_pkey_new([
             'curve_name' => 'prime256v1',
@@ -55,6 +58,7 @@ class AppleClientSecretGeneratorTest extends TestCase
     public function testGeneratesValidJwt(): void
     {
         $generator = new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
@@ -82,6 +86,7 @@ class AppleClientSecretGeneratorTest extends TestCase
     public function testJwtHasCorrectHeader(): void
     {
         $generator = new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
@@ -100,6 +105,7 @@ class AppleClientSecretGeneratorTest extends TestCase
     public function testExpiryIsRespected(): void
     {
         $generator = new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
@@ -124,6 +130,7 @@ class AppleClientSecretGeneratorTest extends TestCase
     public function testExpiryIsCappedAtSixMonths(): void
     {
         $generator = new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
@@ -146,6 +153,7 @@ class AppleClientSecretGeneratorTest extends TestCase
     public function testThrowsExceptionForMissingKeyFile(): void
     {
         $generator = new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
@@ -161,6 +169,7 @@ class AppleClientSecretGeneratorTest extends TestCase
     public function testDifferentConfigurationsProduceDifferentTokens(): void
     {
         $generator1 = new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.app.one',
             teamId: 'TEAM111111',
             keyId: 'KEY111111',
@@ -168,6 +177,7 @@ class AppleClientSecretGeneratorTest extends TestCase
         );
 
         $generator2 = new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.app.two',
             teamId: 'TEAM222222',
             keyId: 'KEY222222',
@@ -195,6 +205,7 @@ class AppleClientSecretGeneratorTest extends TestCase
         $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
 
         new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
@@ -208,6 +219,7 @@ class AppleClientSecretGeneratorTest extends TestCase
         $this->expectExceptionMessage('APPLE_TEAM_ID is not configured');
 
         new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: '',
             keyId: 'KEY123456',
@@ -221,6 +233,7 @@ class AppleClientSecretGeneratorTest extends TestCase
         $this->expectExceptionMessage('APPLE_KEY_ID is not configured');
 
         new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: '',
@@ -234,6 +247,7 @@ class AppleClientSecretGeneratorTest extends TestCase
         $this->expectExceptionMessage('APPLE_PRIVATE_KEY_PATH is not configured');
 
         new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
@@ -247,6 +261,7 @@ class AppleClientSecretGeneratorTest extends TestCase
         $this->expectExceptionMessage('APPLE_TEAM_ID is not configured');
 
         new AppleClientSecretGenerator(
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: '%env(APPLE_TEAM_ID)%',
             keyId: 'KEY123456',

@@ -18,6 +18,11 @@ interface ConfigurableOAuthProviderInterface extends OAuthProviderInterface
     public function getName(): string;
 
     /**
+     * Get the human-readable display name (e.g., 'Google', 'Apple').
+     */
+    public function getDisplayName(): string;
+
+    /**
      * Check if the provider is enabled in configuration.
      */
     public function isEnabled(): bool;

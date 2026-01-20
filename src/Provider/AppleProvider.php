@@ -33,20 +33,16 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
     private const TOKEN_URL = 'https://appleid.apple.com/auth/token';
     private const PROVIDER_NAME = 'apple';
 
-    private readonly CredentialValidator $credentialValidator;
-
     public function __construct(
         private readonly ClientInterface $httpClient,
         private readonly AppleClientSecretGeneratorInterface $clientSecretGenerator,
+        private readonly CredentialValidator $credentialValidator,
         private readonly string $clientId,
         private readonly bool $enabled = true,
         private readonly ?AppleJwksVerifier $jwksVerifier = null,
         private readonly bool $verifyJwt = true,
         private readonly ?OAuthSecurityLogger $securityLogger = null,
-        ?CredentialValidator $credentialValidator = null,
     ) {
-        $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
-
         if ($this->enabled) {
             $this->validateCredentials();
         }
@@ -60,6 +56,11 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
     public function getName(): string
     {
         return self::PROVIDER_NAME;
+    }
+
+    public function getDisplayName(): string
+    {
+        return 'Apple';
     }
 
     public function isEnabled(): bool

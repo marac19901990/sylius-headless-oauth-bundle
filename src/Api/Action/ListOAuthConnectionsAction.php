@@ -34,17 +34,14 @@ use Symfony\Component\HttpKernel\Attribute\AsController;
 #[AsController]
 final class ListOAuthConnectionsAction
 {
-    private readonly ProviderFieldMapper $fieldMapper;
-
     /**
      * @param iterable<OAuthProviderInterface> $providers
      */
     public function __construct(
         private readonly Security $security,
         private readonly iterable $providers,
-        ?ProviderFieldMapper $fieldMapper = null,
+        private readonly ProviderFieldMapper $fieldMapper,
     ) {
-        $this->fieldMapper = $fieldMapper ?? new ProviderFieldMapper();
     }
 
     public function __invoke(): JsonResponse
@@ -69,21 +66,24 @@ final class ListOAuthConnectionsAction
         $connections = [];
 
         foreach ($this->providers as $provider) {
-            if (!$provider instanceof ConfigurableOAuthProviderInterface) {
+            // Only check isEnabled() if provider is configurable, otherwise assume enabled
+            if ($provider instanceof ConfigurableOAuthProviderInterface && !$provider->isEnabled()) {
                 continue;
             }
 
-            if (!$provider->isEnabled()) {
-                continue;
-            }
+            $providerName = $provider instanceof ConfigurableOAuthProviderInterface
+                ? $provider->getName()
+                : 'unknown';
+            $displayName = $provider instanceof ConfigurableOAuthProviderInterface
+                ? $provider->getDisplayName()
+                : ucfirst($providerName);
 
-            $providerName = $provider->getName();
             $providerId = $this->fieldMapper->getProviderId($customer, $providerName);
 
             if ($providerId !== null) {
                 $connections[] = [
                     'provider' => $providerName,
-                    'displayName' => $this->getDisplayName($providerName),
+                    'displayName' => $displayName,
                     'connectedAt' => null, // Could be enhanced with timestamp if stored
                 ];
             }
@@ -92,21 +92,5 @@ final class ListOAuthConnectionsAction
         return new JsonResponse([
             'connections' => $connections,
         ]);
-    }
-
-    private function getDisplayName(string $name): string
-    {
-        $displayNames = [
-            'google' => 'Google',
-            'apple' => 'Apple',
-            'facebook' => 'Facebook',
-            'github' => 'GitHub',
-            'keycloak' => 'Keycloak',
-            'auth0' => 'Auth0',
-            'okta' => 'Okta',
-            'azure' => 'Microsoft Azure',
-        ];
-
-        return $displayNames[$name] ?? ucfirst($name);
     }
 }

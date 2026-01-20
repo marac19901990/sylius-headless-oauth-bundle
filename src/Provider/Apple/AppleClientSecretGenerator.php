@@ -23,16 +23,13 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
     private const APPLE_AUDIENCE = 'https://appleid.apple.com';
     private const MAX_EXPIRY_SECONDS = 15777000; // ~6 months
 
-    private readonly CredentialValidator $credentialValidator;
-
     public function __construct(
+        private readonly CredentialValidator $credentialValidator,
         private readonly string $clientId,
         private readonly string $teamId,
         private readonly string $keyId,
         private readonly string $privateKeyPath,
-        ?CredentialValidator $credentialValidator = null,
     ) {
-        $this->credentialValidator = $credentialValidator ?? new CredentialValidator();
         $this->validateCredentials();
     }
 

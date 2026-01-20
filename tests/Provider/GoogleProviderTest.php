@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -17,13 +18,16 @@ use RuntimeException;
 class GoogleProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
+    private CredentialValidator $credentialValidator;
     private GoogleProvider $provider;
 
     protected function setUp(): void
     {
         $this->httpClient = $this->createMock(ClientInterface::class);
+        $this->credentialValidator = new CredentialValidator();
         $this->provider = new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -48,6 +52,7 @@ class GoogleProviderTest extends TestCase
     {
         $disabledProvider = new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: false,
@@ -202,6 +207,7 @@ class GoogleProviderTest extends TestCase
 
         new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -215,6 +221,7 @@ class GoogleProviderTest extends TestCase
 
         new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: '',
             enabled: true,
@@ -228,6 +235,7 @@ class GoogleProviderTest extends TestCase
 
         new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '%env(GOOGLE_CLIENT_ID)%',
             clientSecret: 'test-client-secret',
             enabled: true,
@@ -238,6 +246,7 @@ class GoogleProviderTest extends TestCase
     {
         $provider = new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: '',
             enabled: false,
@@ -260,6 +269,7 @@ class GoogleProviderTest extends TestCase
     {
         $disabledProvider = new GoogleProvider(
             httpClient: $this->httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: 'test-client-secret',
             enabled: false,

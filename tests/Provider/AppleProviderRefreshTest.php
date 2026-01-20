@@ -11,6 +11,7 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInt
 use Marac\SyliusHeadlessOAuthBundle\Provider\AppleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -18,6 +19,7 @@ class AppleProviderRefreshTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
     private AppleClientSecretGeneratorInterface&MockObject $clientSecretGenerator;
+    private CredentialValidator $credentialValidator;
     private AppleProvider $provider;
 
     protected function setUp(): void
@@ -25,10 +27,12 @@ class AppleProviderRefreshTest extends TestCase
         $this->httpClient = $this->createMock(ClientInterface::class);
         $this->clientSecretGenerator = $this->createMock(AppleClientSecretGeneratorInterface::class);
         $this->clientSecretGenerator->method('generate')->willReturn('generated-client-secret');
+        $this->credentialValidator = new CredentialValidator();
 
         $this->provider = new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
+            credentialValidator: $this->credentialValidator,
             clientId: 'com.example.app',
             enabled: true,
         );
@@ -177,6 +181,7 @@ class AppleProviderRefreshTest extends TestCase
         $provider = new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
+            credentialValidator: $this->credentialValidator,
             clientId: '%env(APPLE_CLIENT_ID)%',
             enabled: false, // Disabled to avoid validation
         );

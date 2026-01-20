@@ -19,6 +19,7 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
+use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -38,11 +39,13 @@ final class FullOAuthFlowTest extends TestCase
 {
     private UserResolverInterface&MockObject $userResolver;
     private JWTTokenManagerInterface&MockObject $jwtManager;
+    private CredentialValidator $credentialValidator;
 
     protected function setUp(): void
     {
         $this->userResolver = $this->createMock(UserResolverInterface::class);
         $this->jwtManager = $this->createMock(JWTTokenManagerInterface::class);
+        $this->credentialValidator = new CredentialValidator();
     }
 
     #[Test]
@@ -71,6 +74,7 @@ final class FullOAuthFlowTest extends TestCase
 
         $googleProvider = new GoogleProvider(
             httpClient: $httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-google-client-id',
             clientSecret: 'test-google-client-secret',
             enabled: true,
@@ -152,6 +156,7 @@ final class FullOAuthFlowTest extends TestCase
 
         $googleProvider = new GoogleProvider(
             httpClient: $httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-google-client-id',
             clientSecret: 'test-google-client-secret',
             enabled: true,
@@ -210,6 +215,7 @@ final class FullOAuthFlowTest extends TestCase
 
         $googleProvider = new GoogleProvider(
             httpClient: $googleHttpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'google-client-id',
             clientSecret: 'google-client-secret',
             enabled: true,
@@ -270,6 +276,7 @@ final class FullOAuthFlowTest extends TestCase
 
         $googleProvider = new GoogleProvider(
             httpClient: $httpClient,
+            credentialValidator: $this->credentialValidator,
             clientId: 'test-google-client-id',
             clientSecret: 'test-google-client-secret',
             enabled: true,

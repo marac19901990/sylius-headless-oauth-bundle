@@ -42,39 +42,26 @@ final class ProviderDiscoveryAction
         $enabledProviders = [];
 
         foreach ($this->providers as $provider) {
-            if (!$provider instanceof ConfigurableOAuthProviderInterface) {
+            // Only check isEnabled() if provider is configurable, otherwise assume enabled
+            if ($provider instanceof ConfigurableOAuthProviderInterface && !$provider->isEnabled()) {
                 continue;
             }
 
-            if (!$provider->isEnabled()) {
-                continue;
-            }
+            $name = $provider instanceof ConfigurableOAuthProviderInterface
+                ? $provider->getName()
+                : 'unknown';
+            $displayName = $provider instanceof ConfigurableOAuthProviderInterface
+                ? $provider->getDisplayName()
+                : ucfirst($name);
 
-            $name = $provider->getName();
             $enabledProviders[] = [
                 'name' => $name,
-                'displayName' => $this->getDisplayName($name),
+                'displayName' => $displayName,
             ];
         }
 
         return new JsonResponse([
             'providers' => $enabledProviders,
         ]);
-    }
-
-    private function getDisplayName(string $name): string
-    {
-        $displayNames = [
-            'google' => 'Google',
-            'apple' => 'Apple',
-            'facebook' => 'Facebook',
-            'github' => 'GitHub',
-            'keycloak' => 'Keycloak',
-            'auth0' => 'Auth0',
-            'okta' => 'Okta',
-            'azure' => 'Microsoft Azure',
-        ];
-
-        return $displayNames[$name] ?? ucfirst($name);
     }
 }
