@@ -62,6 +62,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
+          extensions: pdo_sqlite
 
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist
@@ -82,3 +83,43 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist
+
+      - name: Run security audit
+        run: composer audit
+
+  backward-compatibility:
+    name: Backward Compatibility
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: bcmath
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist
+
+      - name: Check backward compatibility
+        run: vendor/bin/roave-backward-compatibility-check --from=origin/${{ github.base_ref }}
