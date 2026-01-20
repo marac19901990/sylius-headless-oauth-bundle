@@ -15,6 +15,8 @@ use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
+use const JSON_THROW_ON_ERROR;
+
 class AppleProviderRefreshTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
@@ -49,7 +51,7 @@ class AppleProviderRefreshTest extends TestCase
         $idTokenPayload = base64_encode(json_encode([
             'sub' => 'apple-user-123',
             'email' => 'john@privaterelay.appleid.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = "header.$idTokenPayload.signature";
 
         $refreshResponse = new Response(200, [], json_encode([
@@ -58,7 +60,7 @@ class AppleProviderRefreshTest extends TestCase
             'expires_in' => 3600,
             'refresh_token' => 'new-refresh-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -88,7 +90,7 @@ class AppleProviderRefreshTest extends TestCase
     {
         $refreshResponse = new Response(200, [], json_encode([
             'error' => 'invalid_grant',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -122,7 +124,7 @@ class AppleProviderRefreshTest extends TestCase
         $payload = base64_encode(json_encode([
             'sub' => 'apple-user-123',
             'email' => 'john@privaterelay.appleid.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = "header.$payload.signature";
 
         $userData = $this->provider->getUserDataFromIdToken($idToken);
@@ -146,7 +148,7 @@ class AppleProviderRefreshTest extends TestCase
         $idTokenPayload = base64_encode(json_encode([
             'sub' => 'apple-user-123',
             'email' => 'john@privaterelay.appleid.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = "header.$idTokenPayload.signature";
 
         $tokenResponse = new Response(200, [], json_encode([
@@ -155,7 +157,7 @@ class AppleProviderRefreshTest extends TestCase
             'expires_in' => 3600,
             'refresh_token' => 'test-refresh-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -203,7 +205,7 @@ class AppleProviderRefreshTest extends TestCase
         $payload = base64_encode(json_encode([
             'sub' => 'apple-user-123',
             // Missing 'email' claim
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = "header.$payload.signature";
 
         $this->expectException(OAuthException::class);

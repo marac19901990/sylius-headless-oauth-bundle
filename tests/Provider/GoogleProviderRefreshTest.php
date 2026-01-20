@@ -14,6 +14,8 @@ use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
+use const JSON_THROW_ON_ERROR;
+
 class GoogleProviderRefreshTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
@@ -44,7 +46,7 @@ class GoogleProviderRefreshTest extends TestCase
             'access_token' => 'new-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -74,7 +76,7 @@ class GoogleProviderRefreshTest extends TestCase
         $refreshResponse = new Response(200, [], json_encode([
             'error' => 'invalid_grant',
             'error_description' => 'Token has been expired or revoked.',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -110,7 +112,7 @@ class GoogleProviderRefreshTest extends TestCase
             'email' => 'john.doe@gmail.com',
             'given_name' => 'John',
             'family_name' => 'Doe',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -141,12 +143,12 @@ class GoogleProviderRefreshTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'test-refresh-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'google-user-123',
             'email' => 'john.doe@gmail.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))

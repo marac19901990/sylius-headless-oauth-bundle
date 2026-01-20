@@ -15,6 +15,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+use const JSON_THROW_ON_ERROR;
+
 class GoogleProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
@@ -67,7 +69,7 @@ class GoogleProviderTest extends TestCase
             'access_token' => 'test-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'google-user-123',
@@ -75,7 +77,7 @@ class GoogleProviderTest extends TestCase
             'given_name' => 'John',
             'family_name' => 'Doe',
             'verified_email' => true,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -107,12 +109,12 @@ class GoogleProviderTest extends TestCase
             'access_token' => 'test-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'google-user-456',
             'email' => 'minimal@gmail.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -132,7 +134,7 @@ class GoogleProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'error' => 'invalid_grant',
             'error_description' => 'Code was already redeemed.',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -151,12 +153,12 @@ class GoogleProviderTest extends TestCase
             'access_token' => 'test-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'google-user-789',
             // Missing 'email' field
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -298,7 +300,7 @@ class GoogleProviderTest extends TestCase
             'email' => 'accesstoken@gmail.com',
             'given_name' => 'Access',
             'family_name' => 'Token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -319,7 +321,7 @@ class GoogleProviderTest extends TestCase
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'google-user-token-data',
             'email' => 'tokendata@gmail.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -343,7 +345,7 @@ class GoogleProviderTest extends TestCase
             'access_token' => 'new-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -370,7 +372,7 @@ class GoogleProviderTest extends TestCase
     {
         $refreshResponse = new Response(200, [], json_encode([
             'error' => 'invalid_grant',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -421,12 +423,12 @@ class GoogleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'provided-refresh-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'google-user-with-refresh',
             'email' => 'refresh@gmail.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -442,12 +444,12 @@ class GoogleProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'email' => 'noid@gmail.com',
             // Missing 'id'
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -464,7 +466,7 @@ class GoogleProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -490,7 +492,7 @@ class GoogleProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $invalidJsonResponse = new Response(200, [], 'not-valid-json');
 

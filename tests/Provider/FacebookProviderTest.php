@@ -15,6 +15,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+use const JSON_THROW_ON_ERROR;
+
 class FacebookProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
@@ -67,14 +69,14 @@ class FacebookProviderTest extends TestCase
             'access_token' => 'test-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'facebook-user-123',
             'email' => 'john.doe@facebook.com',
             'first_name' => 'John',
             'last_name' => 'Doe',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -106,12 +108,12 @@ class FacebookProviderTest extends TestCase
             'access_token' => 'test-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'facebook-user-456',
             'email' => 'minimal@facebook.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -134,7 +136,7 @@ class FacebookProviderTest extends TestCase
                 'type' => 'OAuthException',
                 'code' => 100,
             ],
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -153,12 +155,12 @@ class FacebookProviderTest extends TestCase
             'access_token' => 'test-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'facebook-user-789',
             // Missing 'email' field
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -300,7 +302,7 @@ class FacebookProviderTest extends TestCase
             'email' => 'accesstoken@facebook.com',
             'first_name' => 'Access',
             'last_name' => 'Token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -321,7 +323,7 @@ class FacebookProviderTest extends TestCase
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'facebook-user-token-data',
             'email' => 'tokendata@facebook.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -345,7 +347,7 @@ class FacebookProviderTest extends TestCase
             'access_token' => 'new-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -376,7 +378,7 @@ class FacebookProviderTest extends TestCase
                 'type' => 'OAuthException',
                 'code' => 190,
             ],
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -427,12 +429,12 @@ class FacebookProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'provided-refresh-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'facebook-user-with-refresh',
             'email' => 'refresh@facebook.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -448,12 +450,12 @@ class FacebookProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'email' => 'noid@facebook.com',
             // Missing 'id'
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -470,7 +472,7 @@ class FacebookProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -496,7 +498,7 @@ class FacebookProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $invalidJsonResponse = new Response(200, [], 'not-valid-json');
 

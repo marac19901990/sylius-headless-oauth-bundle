@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 
 use function strlen;
 
+use const JSON_THROW_ON_ERROR;
 use const OPENSSL_KEYTYPE_EC;
 
 class AppleClientSecretGeneratorTest extends TestCase
@@ -41,6 +42,9 @@ class AppleClientSecretGeneratorTest extends TestCase
         $this->testPrivateKey = $privateKey;
 
         $details = openssl_pkey_get_details($keyPair);
+        if ($details === false) {
+            $this->markTestSkipped('Unable to get key details');
+        }
         $this->testPublicKey = $details['key'];
 
         // Write the private key to a temp file
@@ -95,7 +99,7 @@ class AppleClientSecretGeneratorTest extends TestCase
 
         $token = $generator->generate();
         $parts = explode('.', $token);
-        $header = json_decode($this->base64UrlDecode($parts[0]), true);
+        $header = json_decode((string) $this->base64UrlDecode($parts[0]), true, 512, JSON_THROW_ON_ERROR);
 
         $this->assertSame('ES256', $header['alg']);
         $this->assertSame('JWT', $header['typ']);

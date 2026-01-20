@@ -15,6 +15,8 @@ use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
+use const JSON_THROW_ON_ERROR;
+
 class AppleProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
@@ -88,7 +90,7 @@ class AppleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -126,7 +128,7 @@ class AppleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -146,7 +148,7 @@ class AppleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             // Missing 'id_token'
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -166,7 +168,7 @@ class AppleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'id_token' => 'not.a.valid.jwt.with.five.parts',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -196,7 +198,7 @@ class AppleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -225,7 +227,7 @@ class AppleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -407,7 +409,7 @@ class AppleProviderTest extends TestCase
             'expires_in' => 3600,
             'refresh_token' => 'new-apple-refresh-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -433,7 +435,7 @@ class AppleProviderTest extends TestCase
     {
         $refreshResponse = new Response(200, [], json_encode([
             'error' => 'invalid_grant',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -484,7 +486,7 @@ class AppleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'id_token' => 'only.twoparts',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -500,7 +502,7 @@ class AppleProviderTest extends TestCase
     public function testThrowsOnMalformedBase64InJwt(): void
     {
         // Create a JWT with invalid base64 in payload
-        $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+        $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
         $invalidPayload = '!!!invalid-base64!!!';
         $signature = $this->base64UrlEncode('fake-signature');
 
@@ -511,7 +513,7 @@ class AppleProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'id_token' => $malformedJwt,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -538,7 +540,7 @@ class AppleProviderTest extends TestCase
             'expires_in' => 3600,
             'id_token' => $idToken,
             'refresh_token' => 'apple-refresh-token-from-auth',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -568,11 +570,13 @@ class AppleProviderTest extends TestCase
     /**
      * Creates a fake JWT with the given payload for testing purposes.
      * Note: This is NOT a valid signed JWT, just a properly formatted one.
+     *
+     * @param array<string, mixed> $payload
      */
     private function createFakeJwt(array $payload): string
     {
-        $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
-        $payloadEncoded = $this->base64UrlEncode(json_encode($payload));
+        $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
+        $payloadEncoded = $this->base64UrlEncode(json_encode($payload, JSON_THROW_ON_ERROR));
         $signature = $this->base64UrlEncode('fake-signature');
 
         return $header . '.' . $payloadEncoded . '.' . $signature;

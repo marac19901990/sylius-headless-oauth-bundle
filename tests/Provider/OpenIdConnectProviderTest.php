@@ -18,6 +18,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+use const JSON_THROW_ON_ERROR;
+
 class OpenIdConnectProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
@@ -123,7 +125,7 @@ class OpenIdConnectProviderTest extends TestCase
             'family_name' => 'Doe',
             'iss' => 'https://keycloak.example.com/realms/test',
             'aud' => 'test-client-id',
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = 'header.' . $payload . '.signature';
 
         $tokenResponse = new Response(200, [], json_encode([
@@ -132,7 +134,7 @@ class OpenIdConnectProviderTest extends TestCase
             'expires_in' => 3600,
             'refresh_token' => 'test-refresh-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -165,14 +167,14 @@ class OpenIdConnectProviderTest extends TestCase
             'access_token' => 'test-access-token',
             'token_type' => 'Bearer',
             // No id_token - will fall back to userinfo
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userinfoResponse = new Response(200, [], json_encode([
             'sub' => 'user-456',
             'email' => 'jane@example.com',
             'given_name' => 'Jane',
             'family_name' => 'Smith',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -206,13 +208,13 @@ class OpenIdConnectProviderTest extends TestCase
 
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userinfoResponse = new Response(200, [], json_encode([
             'sub' => 'user-789',
             'email' => 'fullname@example.com',
             'name' => 'Full Name',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -233,7 +235,7 @@ class OpenIdConnectProviderTest extends TestCase
 
         $tokenResponse = new Response(200, [], json_encode([
             'error' => 'invalid_grant',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -258,12 +260,12 @@ class OpenIdConnectProviderTest extends TestCase
 
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userinfoResponse = new Response(200, [], json_encode([
             'email' => 'nosub@example.com',
             // Missing 'sub'
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -288,12 +290,12 @@ class OpenIdConnectProviderTest extends TestCase
 
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userinfoResponse = new Response(200, [], json_encode([
             'sub' => 'user-noemail',
             // Missing 'email'
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -358,7 +360,7 @@ class OpenIdConnectProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             // No id_token
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -383,7 +385,7 @@ class OpenIdConnectProviderTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'id_token' => 'new-id-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -417,7 +419,7 @@ class OpenIdConnectProviderTest extends TestCase
         $refreshResponse = new Response(200, [], json_encode([
             'access_token' => 'new-access-token',
             // No new refresh_token - provider doesn't rotate
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -437,7 +439,7 @@ class OpenIdConnectProviderTest extends TestCase
 
         $refreshResponse = new Response(200, [], json_encode([
             'error' => 'invalid_grant',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -481,7 +483,7 @@ class OpenIdConnectProviderTest extends TestCase
             'email' => 'accesstoken@example.com',
             'given_name' => 'Access',
             'family_name' => 'Token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -502,7 +504,7 @@ class OpenIdConnectProviderTest extends TestCase
             'email' => 'idtoken@example.com',
             'given_name' => 'Id',
             'family_name' => 'Token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = 'header.' . $payload . '.signature';
 
         $tokenData = new OAuthTokenData(
@@ -527,7 +529,7 @@ class OpenIdConnectProviderTest extends TestCase
         $userinfoResponse = new Response(200, [], json_encode([
             'sub' => 'user-from-userinfo',
             'email' => 'userinfo@example.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -624,18 +626,18 @@ class OpenIdConnectProviderTest extends TestCase
         $payload = base64_encode(json_encode([
             'email' => 'nosub@example.com',
             // Missing 'sub' - will fall back to userinfo
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = 'header.' . $payload . '.signature';
 
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userinfoResponse = new Response(200, [], json_encode([
             'sub' => 'user-from-userinfo',
             'email' => 'nosub@example.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -661,13 +663,13 @@ class OpenIdConnectProviderTest extends TestCase
         $payload = base64_encode(json_encode([
             'email' => 'nosub@example.com',
             // Missing 'sub'
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = 'header.' . $payload . '.signature';
 
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -693,18 +695,18 @@ class OpenIdConnectProviderTest extends TestCase
         $payload = base64_encode(json_encode([
             'sub' => 'user-noemail',
             // Missing 'email' - will fall back to userinfo
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = 'header.' . $payload . '.signature';
 
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userinfoResponse = new Response(200, [], json_encode([
             'sub' => 'user-noemail',
             'email' => 'recovered@example.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -731,13 +733,13 @@ class OpenIdConnectProviderTest extends TestCase
         $payload = base64_encode(json_encode([
             'sub' => 'user-noemail',
             // Missing 'email'
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = 'header.' . $payload . '.signature';
 
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -761,13 +763,13 @@ class OpenIdConnectProviderTest extends TestCase
             'email' => 'altnames@example.com',
             'first_name' => 'First',
             'last_name' => 'Last',
-        ]));
+        ], JSON_THROW_ON_ERROR));
         $idToken = 'header.' . $payload . '.signature';
 
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'id_token' => $idToken,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -793,12 +795,12 @@ class OpenIdConnectProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'id_token' => 'invalid-token-format', // Not 3 parts - will fall back to userinfo
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userinfoResponse = new Response(200, [], json_encode([
             'sub' => 'user-from-userinfo',
             'email' => 'recovered@example.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -824,7 +826,7 @@ class OpenIdConnectProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'id_token' => 'invalid-token-format', // Not 3 parts
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())

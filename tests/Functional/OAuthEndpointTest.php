@@ -12,6 +12,8 @@ use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
+use const JSON_THROW_ON_ERROR;
+
 /**
  * Functional tests for OAuth endpoints.
  *
@@ -73,11 +75,11 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'valid_google_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertResponseIsSuccessful();
         self::assertArrayHasKey('token', $content);
@@ -109,11 +111,11 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'valid_facebook_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertResponseIsSuccessful();
         self::assertArrayHasKey('token', $content);
@@ -140,11 +142,11 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'valid_apple_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertResponseIsSuccessful();
         self::assertArrayHasKey('token', $content);
@@ -168,7 +170,7 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'some_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
@@ -190,7 +192,7 @@ class OAuthEndpointTest extends WebTestCase
             ['CONTENT_TYPE' => 'application/json'],
             json_encode([
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
@@ -210,7 +212,7 @@ class OAuthEndpointTest extends WebTestCase
             ['CONTENT_TYPE' => 'application/json'],
             json_encode([
                 'code' => 'some_code',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
@@ -231,7 +233,7 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'some_code',
                 'redirectUri' => 'https://malicious.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
@@ -259,7 +261,7 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'invalid_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
@@ -296,7 +298,7 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'valid_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         self::assertResponseIsSuccessful();
@@ -344,11 +346,11 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'valid_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertResponseIsSuccessful();
         self::assertEquals($existingId, $content['customerId']);
@@ -392,11 +394,11 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'valid_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertResponseIsSuccessful();
         self::assertEquals($existingId, $content['customerId']);
@@ -425,7 +427,7 @@ class OAuthEndpointTest extends WebTestCase
             json_encode([
                 'code' => 'valid_code',
                 'redirectUri' => 'https://example.com/callback',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         self::assertResponseIsSuccessful();
@@ -443,11 +445,11 @@ class OAuthEndpointTest extends WebTestCase
             ['CONTENT_TYPE' => 'application/json'],
             json_encode([
                 'refreshToken' => 'google_refresh_token_456',
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertResponseIsSuccessful();
         self::assertArrayHasKey('token', $content);
@@ -501,11 +503,11 @@ class OAuthEndpointTest extends WebTestCase
                 'code' => 'valid_code',
                 'redirectUri' => 'https://example.com/callback',
                 'state' => $state,
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertResponseIsSuccessful();
         self::assertArrayHasKey('state', $content);

@@ -14,6 +14,8 @@ use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
+use const JSON_THROW_ON_ERROR;
+
 class FacebookProviderRefreshTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
@@ -44,7 +46,7 @@ class FacebookProviderRefreshTest extends TestCase
             'access_token' => 'new-access-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -76,7 +78,7 @@ class FacebookProviderRefreshTest extends TestCase
             'refresh_token' => 'new-refresh-token',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -97,7 +99,7 @@ class FacebookProviderRefreshTest extends TestCase
                 'type' => 'OAuthException',
                 'code' => 190,
             ],
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -133,7 +135,7 @@ class FacebookProviderRefreshTest extends TestCase
             'email' => 'john.doe@facebook.com',
             'first_name' => 'John',
             'last_name' => 'Doe',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -165,12 +167,12 @@ class FacebookProviderRefreshTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'test-refresh-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 'facebook-user-123',
             'email' => 'john.doe@facebook.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))

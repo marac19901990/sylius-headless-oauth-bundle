@@ -10,6 +10,8 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+use const JSON_THROW_ON_ERROR;
+
 class ProviderDiscoveryActionTest extends TestCase
 {
     public function testReturnsEmptyProvidersWhenNoneConfigured(): void
@@ -21,7 +23,7 @@ class ProviderDiscoveryActionTest extends TestCase
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame(200, $response->getStatusCode());
 
-        $data = json_decode($response->getContent(), true);
+        $data = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame(['providers' => []], $data);
     }
 
@@ -34,7 +36,7 @@ class ProviderDiscoveryActionTest extends TestCase
 
         $response = $action();
 
-        $data = json_decode($response->getContent(), true);
+        $data = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         $this->assertCount(1, $data['providers']);
         $this->assertSame('google', $data['providers'][0]['name']);
@@ -51,7 +53,7 @@ class ProviderDiscoveryActionTest extends TestCase
 
         $response = $action();
 
-        $data = json_decode($response->getContent(), true);
+        $data = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         $this->assertCount(3, $data['providers']);
 
@@ -78,7 +80,7 @@ class ProviderDiscoveryActionTest extends TestCase
 
         $response = $action();
 
-        $data = json_decode($response->getContent(), true);
+        $data = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         $expectedMappings = [
             'google' => 'Google',
@@ -103,7 +105,7 @@ class ProviderDiscoveryActionTest extends TestCase
 
         $response = $action();
 
-        $data = json_decode($response->getContent(), true);
+        $data = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         $this->assertSame('Mycompany', $data['providers'][0]['displayName']);
     }
@@ -118,7 +120,7 @@ class ProviderDiscoveryActionTest extends TestCase
 
         $response = $action();
 
-        $data = json_decode($response->getContent(), true);
+        $data = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
         // Both providers are included - non-configurable assumed enabled
         $this->assertCount(2, $data['providers']);

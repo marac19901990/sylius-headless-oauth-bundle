@@ -46,6 +46,8 @@ final class OAuthSecurityLogger
 
     /**
      * Log a failed OAuth authentication.
+     *
+     * @param array<string, mixed> $context
      */
     public function logAuthFailure(
         string $provider,
@@ -76,6 +78,8 @@ final class OAuthSecurityLogger
 
     /**
      * Log a failed token refresh.
+     *
+     * @param array<string, mixed> $context
      */
     public function logRefreshFailure(
         string $provider,
@@ -97,6 +101,8 @@ final class OAuthSecurityLogger
      * - Forged JWT tokens
      * - Invalid redirect URIs
      * - Provider ID mismatch during refresh
+     *
+     * @param array<string, mixed> $context
      */
     public function logSuspiciousActivity(
         string $type,
@@ -111,6 +117,8 @@ final class OAuthSecurityLogger
 
     /**
      * Log JWT verification failure (potential forgery attempt).
+     *
+     * @param array<string, mixed> $context
      */
     public function logJwtVerificationFailure(
         string $provider,

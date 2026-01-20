@@ -219,6 +219,9 @@ class InstallCommandTest extends TestCase
         $this->assertSame('f', $definition->getOption('force')->getShortcut());
     }
 
+    /**
+     * @param array<int, ConfigurableOAuthProviderInterface> $providers
+     */
     private function createCommandTester(array $providers): CommandTester
     {
         $healthChecker = new ProviderHealthChecker($providers);

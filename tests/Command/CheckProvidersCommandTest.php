@@ -89,6 +89,9 @@ class CheckProvidersCommandTest extends TestCase
         $this->assertStringContainsString('OK', $output);
     }
 
+    /**
+     * @param array<int, ConfigurableOAuthProviderInterface> $providers
+     */
     private function createCommandTester(array $providers): CommandTester
     {
         $healthChecker = new ProviderHealthChecker($providers);

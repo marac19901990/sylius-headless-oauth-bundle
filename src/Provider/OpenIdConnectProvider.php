@@ -321,7 +321,13 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
                 throw new OAuthException('Invalid id_token format');
             }
 
-            $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/'), true), true);
+            $decoded = base64_decode(strtr($parts[1], '-_', '+/'), true);
+
+            if ($decoded === false) {
+                throw new OAuthException('Failed to base64 decode id_token payload');
+            }
+
+            $payload = json_decode($decoded, true);
 
             if ($payload === null) {
                 throw new OAuthException('Failed to decode id_token payload');

@@ -14,6 +14,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Contracts\Cache\CacheInterface;
 
+use const JSON_THROW_ON_ERROR;
+
 /**
  * Tests for AppleJwksVerifier.
  *
@@ -72,7 +74,7 @@ final class AppleJwksVerifierTest extends TestCase
     public function testVerifyThrowsOnEmptyJwksKeys(): void
     {
         $this->httpClient->method('request')
-            ->willReturn(new Response(200, [], json_encode(['keys' => []])));
+            ->willReturn(new Response(200, [], json_encode(['keys' => []], JSON_THROW_ON_ERROR)));
 
         $verifier = new AppleJwksVerifier(
             $this->httpClient,
@@ -89,7 +91,7 @@ final class AppleJwksVerifierTest extends TestCase
     public function testVerifyThrowsOnMissingKeysProperty(): void
     {
         $this->httpClient->method('request')
-            ->willReturn(new Response(200, [], json_encode(['other' => 'data'])));
+            ->willReturn(new Response(200, [], json_encode(['other' => 'data'], JSON_THROW_ON_ERROR)));
 
         $verifier = new AppleJwksVerifier(
             $this->httpClient,
@@ -120,7 +122,7 @@ final class AppleJwksVerifierTest extends TestCase
         ];
 
         $this->httpClient->method('request')
-            ->willReturn(new Response(200, [], json_encode($jwks)));
+            ->willReturn(new Response(200, [], json_encode($jwks, JSON_THROW_ON_ERROR)));
 
         $verifier = new AppleJwksVerifier(
             $this->httpClient,
@@ -243,7 +245,7 @@ final class AppleJwksVerifierTest extends TestCase
         $this->httpClient->expects($this->once())
             ->method('request')
             ->with('GET', 'https://appleid.apple.com/auth/keys', $this->anything())
-            ->willReturn(new Response(200, [], json_encode($jwks)));
+            ->willReturn(new Response(200, [], json_encode($jwks, JSON_THROW_ON_ERROR)));
 
         $verifier = new AppleJwksVerifier(
             $this->httpClient,

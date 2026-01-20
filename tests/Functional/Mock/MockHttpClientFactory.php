@@ -9,6 +9,8 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 
+use const JSON_THROW_ON_ERROR;
+
 /**
  * Creates a Guzzle HTTP client with a MockHandler for testing.
  *
@@ -54,7 +56,7 @@ final class MockHttpClientFactory
             $body['refresh_token'] = $refreshToken;
         }
 
-        return new Response(200, ['Content-Type' => 'application/json'], json_encode($body));
+        return new Response(200, ['Content-Type' => 'application/json'], json_encode($body, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -73,7 +75,7 @@ final class MockHttpClientFactory
             'given_name' => $givenName,
             'family_name' => $familyName,
             'picture' => 'https://example.com/photo.jpg',
-        ]));
+        ], JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -86,7 +88,7 @@ final class MockHttpClientFactory
             'access_token' => $accessToken,
             'token_type' => 'bearer',
             'expires_in' => 5183944,
-        ]));
+        ], JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -103,7 +105,7 @@ final class MockHttpClientFactory
             'email' => $email,
             'first_name' => $firstName,
             'last_name' => $lastName,
-        ]));
+        ], JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -116,7 +118,7 @@ final class MockHttpClientFactory
     ): Response {
         // Create a basic JWT id_token if not provided
         if ($idToken === '') {
-            $header = base64_encode(json_encode(['alg' => 'RS256', 'kid' => 'test_key']));
+            $header = base64_encode(json_encode(['alg' => 'RS256', 'kid' => 'test_key'], JSON_THROW_ON_ERROR));
             $payload = base64_encode(json_encode([
                 'iss' => 'https://appleid.apple.com',
                 'sub' => 'apple_user_123',
@@ -125,7 +127,7 @@ final class MockHttpClientFactory
                 'email_verified' => 'true',
                 'exp' => time() + 3600,
                 'iat' => time(),
-            ]));
+            ], JSON_THROW_ON_ERROR));
             $signature = base64_encode('test_signature');
             $idToken = "$header.$payload.$signature";
         }
@@ -141,7 +143,7 @@ final class MockHttpClientFactory
             $body['refresh_token'] = $refreshToken;
         }
 
-        return new Response(200, ['Content-Type' => 'application/json'], json_encode($body));
+        return new Response(200, ['Content-Type' => 'application/json'], json_encode($body, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -155,7 +157,7 @@ final class MockHttpClientFactory
         return new Response($statusCode, ['Content-Type' => 'application/json'], json_encode([
             'error' => $error,
             'error_description' => $errorDescription,
-        ]));
+        ], JSON_THROW_ON_ERROR));
     }
 
     public static function createClient(): Client

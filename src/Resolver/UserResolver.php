@@ -54,14 +54,14 @@ final class UserResolver implements UserResolverInterface
         }
 
         // 2. Try to find by email
-        $customer = $this->customerRepository->findOneBy(['email' => $userData->email]);
+        $customerByEmail = $this->customerRepository->findOneBy(['email' => $userData->email]);
 
-        if ($customer !== null) {
+        if ($customerByEmail instanceof CustomerInterface) {
             // 3. Link provider ID to existing customer
-            $this->linkProviderToCustomer($customer, $userData);
+            $this->linkProviderToCustomer($customerByEmail, $userData);
 
             return new UserResolveResult(
-                shopUser: $this->getOrCreateShopUser($customer, $userData),
+                shopUser: $this->getOrCreateShopUser($customerByEmail, $userData),
                 isNewUser: false,
             );
         }
@@ -76,8 +76,9 @@ final class UserResolver implements UserResolverInterface
     private function findByProviderId(string $provider, string $providerId): ?CustomerInterface
     {
         $field = $this->fieldMapper->getFieldName($provider);
+        $result = $this->customerRepository->findOneBy([$field => $providerId]);
 
-        return $this->customerRepository->findOneBy([$field => $providerId]);
+        return $result instanceof CustomerInterface ? $result : null;
     }
 
     private function linkProviderToCustomer(CustomerInterface $customer, OAuthUserData $userData): void
@@ -112,7 +113,7 @@ final class UserResolver implements UserResolverInterface
     {
         $shopUser = $customer->getUser();
 
-        if ($shopUser !== null) {
+        if ($shopUser instanceof ShopUserInterface) {
             return $shopUser;
         }
 

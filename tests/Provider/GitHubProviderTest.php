@@ -17,6 +17,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+use const JSON_THROW_ON_ERROR;
+
 class GitHubProviderTest extends TestCase
 {
     private ClientInterface&MockObject $httpClient;
@@ -70,7 +72,7 @@ class GitHubProviderTest extends TestCase
             'access_token' => 'test-access-token',
             'token_type' => 'bearer',
             'scope' => 'user:email',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 12345678,
@@ -78,7 +80,7 @@ class GitHubProviderTest extends TestCase
             'name' => 'John Doe',
             'email' => 'john.doe@example.com',
             'avatar_url' => 'https://avatars.githubusercontent.com/u/12345678',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -110,19 +112,19 @@ class GitHubProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'token_type' => 'bearer',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 12345678,
             'login' => 'johndoe',
             'name' => 'John Doe',
             'email' => null, // Private email
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $emailsResponse = new Response(200, [], json_encode([
             ['email' => 'secondary@example.com', 'primary' => false, 'verified' => true],
             ['email' => 'primary@example.com', 'primary' => true, 'verified' => true],
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(3))
@@ -151,14 +153,14 @@ class GitHubProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'token_type' => 'bearer',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 12345678,
             'login' => 'johndoe',
             'name' => 'John',
             'email' => 'john@example.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -176,14 +178,14 @@ class GitHubProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'token_type' => 'bearer',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 12345678,
             'login' => 'johndoe',
             'name' => null,
             'email' => 'john@example.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -201,15 +203,15 @@ class GitHubProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
             'token_type' => 'bearer',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 12345678,
             'login' => 'johndoe',
             'email' => null,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
-        $emailsResponse = new Response(200, [], json_encode([])); // No emails
+        $emailsResponse = new Response(200, [], json_encode([], JSON_THROW_ON_ERROR)); // No emails
 
         $this->httpClient
             ->expects($this->exactly(3))
@@ -239,7 +241,7 @@ class GitHubProviderTest extends TestCase
         $tokenResponse = new Response(200, [], json_encode([
             'error' => 'bad_verification_code',
             'error_description' => 'The code passed is incorrect or expired.',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -256,7 +258,7 @@ class GitHubProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'token_type' => 'bearer',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -407,7 +409,7 @@ class GitHubProviderTest extends TestCase
             'login' => 'janedoe',
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->once())
@@ -427,13 +429,13 @@ class GitHubProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'login' => 'noid',
             'email' => 'noid@example.com',
             // Missing 'id'
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -450,7 +452,7 @@ class GitHubProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(2))
@@ -476,7 +478,7 @@ class GitHubProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $invalidJsonResponse = new Response(200, [], 'not-valid-json');
 
@@ -495,18 +497,18 @@ class GitHubProviderTest extends TestCase
     {
         $tokenResponse = new Response(200, [], json_encode([
             'access_token' => 'test-access-token',
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $userInfoResponse = new Response(200, [], json_encode([
             'id' => 12345678,
             'login' => 'johndoe',
             'email' => null,
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $emailsResponse = new Response(200, [], json_encode([
             ['email' => 'verified@example.com', 'primary' => false, 'verified' => true],
             ['email' => 'unverified@example.com', 'primary' => true, 'verified' => false],
-        ]));
+        ], JSON_THROW_ON_ERROR));
 
         $this->httpClient
             ->expects($this->exactly(3))

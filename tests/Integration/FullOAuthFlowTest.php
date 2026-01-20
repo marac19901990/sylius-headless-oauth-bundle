@@ -26,6 +26,8 @@ use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 
+use const JSON_THROW_ON_ERROR;
+
 /**
  * Integration tests for the full OAuth flow.
  *
@@ -59,7 +61,7 @@ final class FullOAuthFlowTest extends TestCase
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
                 'refresh_token' => 'google-refresh-token-456',
-            ])),
+            ], JSON_THROW_ON_ERROR)),
             // User info response
             new Response(200, [], json_encode([
                 'id' => 'google-user-id-789',
@@ -67,7 +69,7 @@ final class FullOAuthFlowTest extends TestCase
                 'given_name' => 'Integration',
                 'family_name' => 'Test',
                 'verified_email' => true,
-            ])),
+            ], JSON_THROW_ON_ERROR)),
         ]);
 
         $httpClient = new Client(['handler' => HandlerStack::create($mockHandler)]);
@@ -142,14 +144,14 @@ final class FullOAuthFlowTest extends TestCase
                 'access_token' => 'new-google-access-token',
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
-            ])),
+            ], JSON_THROW_ON_ERROR)),
             // User info response (called via getUserDataFromTokenData)
             new Response(200, [], json_encode([
                 'id' => 'google-user-id-refresh',
                 'email' => 'refresh@gmail.com',
                 'given_name' => 'Refresh',
                 'family_name' => 'User',
-            ])),
+            ], JSON_THROW_ON_ERROR)),
         ]);
 
         $httpClient = new Client(['handler' => HandlerStack::create($mockHandler)]);
@@ -269,7 +271,7 @@ final class FullOAuthFlowTest extends TestCase
             new Response(200, [], json_encode([
                 'error' => 'invalid_grant',
                 'error_description' => 'The authorization code has expired.',
-            ])),
+            ], JSON_THROW_ON_ERROR)),
         ]);
 
         $httpClient = new Client(['handler' => HandlerStack::create($mockHandler)]);
