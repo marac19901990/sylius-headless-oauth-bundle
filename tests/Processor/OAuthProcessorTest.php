@@ -16,6 +16,8 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
+use Marac\SyliusHeadlessOAuthBundle\Security\NullOAuthSecurityLogger;
+use Marac\SyliusHeadlessOAuthBundle\Security\NullRedirectUriValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\CustomerInterface;
@@ -50,6 +52,8 @@ class OAuthProcessorTest extends TestCase
             providers: [$this->googleProvider, $this->appleProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            redirectUriValidator: new NullRedirectUriValidator(),
+            securityLogger: new NullOAuthSecurityLogger(),
             eventDispatcher: $this->eventDispatcher,
         );
 
@@ -426,6 +430,8 @@ class OAuthProcessorTest extends TestCase
             providers: [$this->googleProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            redirectUriValidator: new NullRedirectUriValidator(),
+            securityLogger: new NullOAuthSecurityLogger(),
             eventDispatcher: null,
         );
 

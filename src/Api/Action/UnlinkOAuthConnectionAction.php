@@ -111,7 +111,7 @@ final class UnlinkOAuthConnectionAction
         }
 
         // Check for other connected providers
-        $providers = ['google', 'apple', 'facebook', 'github', 'oidc'];
+        $providers = $this->fieldMapper->getBuiltInProviders();
 
         foreach ($providers as $provider) {
             if ($provider === $providerToRemove) {

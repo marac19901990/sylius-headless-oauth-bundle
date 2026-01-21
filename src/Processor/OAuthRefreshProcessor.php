@@ -41,7 +41,7 @@ final class OAuthRefreshProcessor implements ProcessorInterface
         private readonly iterable $providers,
         private readonly UserResolverInterface $userResolver,
         private readonly JWTTokenManagerInterface $jwtManager,
-        private readonly ?OAuthSecurityLoggerInterface $securityLogger = null,
+        private readonly OAuthSecurityLoggerInterface $securityLogger,
     ) {
     }
 
@@ -68,7 +68,7 @@ final class OAuthRefreshProcessor implements ProcessorInterface
             $customerId = $shopUser->getCustomer()?->getId();
 
             // Log successful refresh
-            $this->securityLogger?->logRefreshSuccess($providerName, $customerId);
+            $this->securityLogger->logRefreshSuccess($providerName, $customerId);
 
             return new OAuthResponse(
                 token: $token,
@@ -76,21 +76,21 @@ final class OAuthRefreshProcessor implements ProcessorInterface
                 customerId: $customerId,
             );
         } catch (ProviderNotSupportedException $e) {
-            $this->securityLogger?->logRefreshFailure(
+            $this->securityLogger->logRefreshFailure(
                 $providerName,
                 'Provider not supported',
             );
 
             throw $e;
         } catch (OAuthException $e) {
-            $this->securityLogger?->logRefreshFailure(
+            $this->securityLogger->logRefreshFailure(
                 $providerName,
                 $e->getMessage(),
             );
 
             throw $e;
         } catch (Throwable $e) {
-            $this->securityLogger?->logRefreshFailure(
+            $this->securityLogger->logRefreshFailure(
                 $providerName,
                 'Unexpected error: ' . $e->getMessage(),
             );

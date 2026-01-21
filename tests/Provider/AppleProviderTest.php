@@ -11,6 +11,7 @@ use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\AppleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Security\NullOAuthSecurityLogger;
 use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -39,6 +40,7 @@ class AppleProviderTest extends TestCase
             clientSecretGenerator: $this->clientSecretGenerator,
             credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
+            securityLogger: new NullOAuthSecurityLogger(),
             enabled: true,
         );
     }
@@ -64,6 +66,7 @@ class AppleProviderTest extends TestCase
             clientSecretGenerator: $this->clientSecretGenerator,
             credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
+            securityLogger: new NullOAuthSecurityLogger(),
             enabled: false,
         );
 
@@ -266,6 +269,7 @@ class AppleProviderTest extends TestCase
             clientSecretGenerator: $this->clientSecretGenerator,
             credentialValidator: $this->credentialValidator,
             clientId: '',
+            securityLogger: new NullOAuthSecurityLogger(),
             enabled: true,
         );
     }
@@ -280,6 +284,7 @@ class AppleProviderTest extends TestCase
             clientSecretGenerator: $this->clientSecretGenerator,
             credentialValidator: $this->credentialValidator,
             clientId: '%env(APPLE_CLIENT_ID)%',
+            securityLogger: new NullOAuthSecurityLogger(),
             enabled: true,
         );
     }
@@ -291,6 +296,7 @@ class AppleProviderTest extends TestCase
             clientSecretGenerator: $this->clientSecretGenerator,
             credentialValidator: $this->credentialValidator,
             clientId: '',
+            securityLogger: new NullOAuthSecurityLogger(),
             enabled: false,
         );
 
@@ -314,6 +320,7 @@ class AppleProviderTest extends TestCase
             clientSecretGenerator: $this->clientSecretGenerator,
             credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
+            securityLogger: new NullOAuthSecurityLogger(),
             enabled: false,
         );
 

@@ -38,10 +38,10 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
         private readonly AppleClientSecretGeneratorInterface $clientSecretGenerator,
         private readonly CredentialValidatorInterface $credentialValidator,
         private readonly string $clientId,
+        private readonly OAuthSecurityLoggerInterface $securityLogger,
         private readonly bool $enabled = true,
         private readonly ?AppleJwksVerifierInterface $jwksVerifier = null,
         private readonly bool $verifyJwt = true,
-        private readonly ?OAuthSecurityLoggerInterface $securityLogger = null,
     ) {
         if ($this->enabled) {
             $this->validateCredentials();
@@ -232,7 +232,7 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
                 return $this->jwksVerifier->verify($idToken);
             } catch (OAuthException $e) {
                 // Log the verification failure
-                $this->securityLogger?->logJwtVerificationFailure(
+                $this->securityLogger->logJwtVerificationFailure(
                     self::PROVIDER_NAME,
                     $e->getMessage(),
                 );

@@ -40,8 +40,8 @@ final class OAuthProcessor implements ProcessorInterface
         private readonly iterable $providers,
         private readonly UserResolverInterface $userResolver,
         private readonly JWTTokenManagerInterface $jwtManager,
-        private readonly ?RedirectUriValidatorInterface $redirectUriValidator = null,
-        private readonly ?OAuthSecurityLoggerInterface $securityLogger = null,
+        private readonly RedirectUriValidatorInterface $redirectUriValidator,
+        private readonly OAuthSecurityLoggerInterface $securityLogger,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
     }
@@ -55,14 +55,12 @@ final class OAuthProcessor implements ProcessorInterface
         $providerName = $uriVariables['provider'] ?? '';
 
         // Validate redirect URI against allowlist (fail fast)
-        if ($this->redirectUriValidator !== null) {
-            try {
-                $this->redirectUriValidator->validate($data->redirectUri);
-            } catch (OAuthException $e) {
-                $this->securityLogger?->logRedirectUriRejected($data->redirectUri, $providerName);
+        try {
+            $this->redirectUriValidator->validate($data->redirectUri);
+        } catch (OAuthException $e) {
+            $this->securityLogger->logRedirectUriRejected($data->redirectUri, $providerName);
 
-                throw $e;
-            }
+            throw $e;
         }
 
         try {
@@ -81,7 +79,7 @@ final class OAuthProcessor implements ProcessorInterface
             );
 
             // Log successful authentication
-            $this->securityLogger?->logAuthSuccess(
+            $this->securityLogger->logAuthSuccess(
                 $providerName,
                 $userData->email,
                 $customerId,
@@ -94,21 +92,21 @@ final class OAuthProcessor implements ProcessorInterface
                 state: $data->state,
             );
         } catch (ProviderNotSupportedException $e) {
-            $this->securityLogger?->logAuthFailure(
+            $this->securityLogger->logAuthFailure(
                 $providerName,
                 'Provider not supported',
             );
 
             throw $e;
         } catch (OAuthException $e) {
-            $this->securityLogger?->logAuthFailure(
+            $this->securityLogger->logAuthFailure(
                 $providerName,
                 $e->getMessage(),
             );
 
             throw $e;
         } catch (Throwable $e) {
-            $this->securityLogger?->logAuthFailure(
+            $this->securityLogger->logAuthFailure(
                 $providerName,
                 'Unexpected error: ' . $e->getMessage(),
             );

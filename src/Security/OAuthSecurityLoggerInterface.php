@@ -9,6 +9,15 @@ namespace Marac\SyliusHeadlessOAuthBundle\Security;
  *
  * Provides structured logging for authentication events, failures,
  * and suspicious activity to enable security monitoring and audit trails.
+ *
+ * @phpstan-type SecurityContext array{
+ *     email?: string,
+ *     customer_id?: int,
+ *     ip_address?: string,
+ *     user_agent?: string,
+ *     code?: string,
+ *     redirect_uri?: string,
+ * }
  */
 interface OAuthSecurityLoggerInterface
 {
@@ -25,7 +34,7 @@ interface OAuthSecurityLoggerInterface
     /**
      * Log a failed OAuth authentication.
      *
-     * @param array<string, mixed> $context
+     * @param SecurityContext $context
      */
     public function logAuthFailure(
         string $provider,
@@ -44,7 +53,7 @@ interface OAuthSecurityLoggerInterface
     /**
      * Log a failed token refresh.
      *
-     * @param array<string, mixed> $context
+     * @param SecurityContext $context
      */
     public function logRefreshFailure(
         string $provider,
@@ -60,7 +69,7 @@ interface OAuthSecurityLoggerInterface
      * - Invalid redirect URIs
      * - Provider ID mismatch during refresh
      *
-     * @param array<string, mixed> $context
+     * @param SecurityContext $context
      */
     public function logSuspiciousActivity(
         string $type,
@@ -70,7 +79,7 @@ interface OAuthSecurityLoggerInterface
     /**
      * Log JWT verification failure (potential forgery attempt).
      *
-     * @param array<string, mixed> $context
+     * @param SecurityContext $context
      */
     public function logJwtVerificationFailure(
         string $provider,

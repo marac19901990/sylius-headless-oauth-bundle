@@ -14,6 +14,8 @@ use function strlen;
  *
  * Provides structured logging for authentication events, failures,
  * and suspicious activity to enable security monitoring and audit trails.
+ *
+ * @phpstan-import-type SecurityContext from OAuthSecurityLoggerInterface
  */
 final class OAuthSecurityLogger implements OAuthSecurityLoggerInterface
 {
@@ -43,7 +45,7 @@ final class OAuthSecurityLogger implements OAuthSecurityLoggerInterface
     /**
      * Log a failed OAuth authentication.
      *
-     * @param array<string, mixed> $context
+     * @param SecurityContext $context
      */
     public function logAuthFailure(
         string $provider,
@@ -75,7 +77,7 @@ final class OAuthSecurityLogger implements OAuthSecurityLoggerInterface
     /**
      * Log a failed token refresh.
      *
-     * @param array<string, mixed> $context
+     * @param SecurityContext $context
      */
     public function logRefreshFailure(
         string $provider,
@@ -98,7 +100,7 @@ final class OAuthSecurityLogger implements OAuthSecurityLoggerInterface
      * - Invalid redirect URIs
      * - Provider ID mismatch during refresh
      *
-     * @param array<string, mixed> $context
+     * @param SecurityContext $context
      */
     public function logSuspiciousActivity(
         string $type,
@@ -114,7 +116,7 @@ final class OAuthSecurityLogger implements OAuthSecurityLoggerInterface
     /**
      * Log JWT verification failure (potential forgery attempt).
      *
-     * @param array<string, mixed> $context
+     * @param SecurityContext $context
      */
     public function logJwtVerificationFailure(
         string $provider,

@@ -17,6 +17,7 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\RefreshableOAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
+use Marac\SyliusHeadlessOAuthBundle\Security\NullOAuthSecurityLogger;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\CustomerInterface;
@@ -62,6 +63,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -109,6 +111,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -156,6 +159,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -182,6 +186,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -205,6 +210,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$nonRefreshableProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -230,6 +236,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -254,6 +261,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -277,6 +285,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -320,6 +329,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -364,6 +374,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$provider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -413,6 +424,7 @@ class OAuthRefreshProcessorTest extends TestCase
             providers: [$googleProvider, $appleProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();

@@ -36,6 +36,10 @@ services:
     # NullLogger fallback for minimal kernels (no Monolog)
     Psr\Log\NullLogger: ~
 
+    # Null Object implementations for optional dependencies
+    Marac\SyliusHeadlessOAuthBundle\Security\NullOAuthSecurityLogger: ~
+    Marac\SyliusHeadlessOAuthBundle\Security\NullRedirectUriValidator: ~
+
     # Security: OAuth Security Logger
     Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger:
         arguments:
@@ -85,10 +89,10 @@ services:
             $clientSecretGenerator: '@Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator'
             $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface'
             $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
+            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface'
             $enabled: '%sylius_headless_oauth.providers.apple.enabled%'
             $jwksVerifier: '@Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifierInterface'
             $verifyJwt: '%sylius_headless_oauth.security.verify_apple_jwt%'
-            $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface'
         tags:
             - { name: 'sylius_headless_oauth.provider' }
 

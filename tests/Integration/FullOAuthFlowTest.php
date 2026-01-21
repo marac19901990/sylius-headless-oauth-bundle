@@ -19,6 +19,8 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolverInterface;
+use Marac\SyliusHeadlessOAuthBundle\Security\NullOAuthSecurityLogger;
+use Marac\SyliusHeadlessOAuthBundle\Security\NullRedirectUriValidator;
 use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -115,6 +117,8 @@ final class FullOAuthFlowTest extends TestCase
             providers: [$googleProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            redirectUriValidator: new NullRedirectUriValidator(),
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRequest();
@@ -189,6 +193,7 @@ final class FullOAuthFlowTest extends TestCase
             providers: [$googleProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRefreshRequest();
@@ -247,6 +252,8 @@ final class FullOAuthFlowTest extends TestCase
             providers: [$googleProvider, $customProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            redirectUriValidator: new NullRedirectUriValidator(),
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRequest();
@@ -288,6 +295,8 @@ final class FullOAuthFlowTest extends TestCase
             providers: [$googleProvider],
             userResolver: $this->userResolver,
             jwtManager: $this->jwtManager,
+            redirectUriValidator: new NullRedirectUriValidator(),
+            securityLogger: new NullOAuthSecurityLogger(),
         );
 
         $request = new OAuthRequest();
