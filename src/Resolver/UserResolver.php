@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Marac\SyliusHeadlessOAuthBundle\Resolver;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
+use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentity;
 use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPreUserCreateEvent;
 use Marac\SyliusHeadlessOAuthBundle\Event\OAuthProviderLinkedEvent;
-use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
-use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface;
+use Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
@@ -18,13 +17,11 @@ use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-use function sprintf;
-
 /**
  * Resolves or creates a ShopUser from OAuth user data.
  *
  * Resolution logic:
- * 1. Find by provider ID (googleId, appleId, etc.)
+ * 1. Find by provider ID (via OAuthIdentity entity)
  * 2. If not found, find by email
  * 3. If found by email, link provider ID to existing customer
  * 4. If not found at all, create new Customer + ShopUser
@@ -36,7 +33,7 @@ final class UserResolver implements UserResolverInterface
         private readonly FactoryInterface $customerFactory,
         private readonly FactoryInterface $shopUserFactory,
         private readonly EntityManagerInterface $entityManager,
-        private readonly ProviderFieldMapperInterface $fieldMapper,
+        private readonly OAuthIdentityRepositoryInterface $oauthIdentityRepository,
         private readonly ClockInterface $clock,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
@@ -44,7 +41,7 @@ final class UserResolver implements UserResolverInterface
 
     public function resolve(OAuthUserData $userData): UserResolveResult
     {
-        // 1. Try to find by provider ID
+        // 1. Try to find by provider ID (via OAuthIdentity)
         $customer = $this->findByProviderId($userData->provider, $userData->providerId);
 
         if ($customer !== null) {
@@ -76,22 +73,20 @@ final class UserResolver implements UserResolverInterface
 
     private function findByProviderId(string $provider, string $providerId): ?CustomerInterface
     {
-        $field = $this->fieldMapper->getFieldName($provider);
-        $result = $this->customerRepository->findOneBy([$field => $providerId]);
+        $oauthIdentity = $this->oauthIdentityRepository->findByProviderIdentifier($provider, $providerId);
 
-        return $result instanceof CustomerInterface ? $result : null;
+        return $oauthIdentity?->getCustomer();
     }
 
     private function linkProviderToCustomer(CustomerInterface $customer, OAuthUserData $userData): void
     {
-        if (!$customer instanceof OAuthIdentityInterface) {
-            throw new OAuthException(sprintf(
-                'Customer entity must implement %s. Add "use OAuthIdentityTrait;" to your Customer class.',
-                OAuthIdentityInterface::class,
-            ));
-        }
+        $oauthIdentity = new OAuthIdentity();
+        $oauthIdentity->setProvider($userData->provider);
+        $oauthIdentity->setIdentifier($userData->providerId);
+        $oauthIdentity->setCustomer($customer);
+        $oauthIdentity->setConnectedAt($this->clock->now());
 
-        $this->fieldMapper->setProviderId($customer, $userData->provider, $userData->providerId);
+        $this->entityManager->persist($oauthIdentity);
 
         // Update name if not set and we have data (especially important for Apple's first-login-only name)
         if ($userData->firstName !== null && $customer->getFirstName() === null) {
@@ -143,22 +138,19 @@ final class UserResolver implements UserResolverInterface
         $event = new OAuthPreUserCreateEvent($userData);
         $this->eventDispatcher?->dispatch($event, OAuthPreUserCreateEvent::NAME);
 
-        /** @var CustomerInterface&OAuthIdentityInterface $customer */
+        /** @var CustomerInterface $customer */
         $customer = $this->customerFactory->createNew();
-
-        if (!$customer instanceof OAuthIdentityInterface) {
-            throw new OAuthException(sprintf(
-                'Customer entity must implement %s. Add "use OAuthIdentityTrait;" to your Customer class.',
-                OAuthIdentityInterface::class,
-            ));
-        }
 
         $customer->setEmail($userData->email);
         $customer->setFirstName($userData->firstName);
         $customer->setLastName($userData->lastName);
 
-        // Link provider ID
-        $this->fieldMapper->setProviderId($customer, $userData->provider, $userData->providerId);
+        // Create OAuth identity to link provider
+        $oauthIdentity = new OAuthIdentity();
+        $oauthIdentity->setProvider($userData->provider);
+        $oauthIdentity->setIdentifier($userData->providerId);
+        $oauthIdentity->setCustomer($customer);
+        $oauthIdentity->setConnectedAt($this->clock->now());
 
         /** @var ShopUserInterface $shopUser */
         $shopUser = $this->shopUserFactory->createNew();
@@ -173,6 +165,7 @@ final class UserResolver implements UserResolverInterface
         $shopUser->setPlainPassword(bin2hex(random_bytes(16)));
 
         $this->entityManager->persist($customer);
+        $this->entityManager->persist($oauthIdentity);
         $this->entityManager->persist($shopUser);
         $this->entityManager->flush();
 

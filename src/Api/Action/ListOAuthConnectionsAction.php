@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Api\Action;
 
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
+use DateTimeInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\ConfigurableOAuthProviderInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface;
-use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface;
+use Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface;
+use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,8 +27,8 @@ use Symfony\Component\HttpKernel\Attribute\AsController;
  * Response:
  *   {
  *     "connections": [
- *       {"provider": "google", "displayName": "Google", "connectedAt": null},
- *       {"provider": "apple", "displayName": "Apple", "connectedAt": null}
+ *       {"provider": "google", "displayName": "Google", "connectedAt": "2024-01-15T10:30:00+00:00"},
+ *       {"provider": "apple", "displayName": "Apple", "connectedAt": "2024-01-10T08:00:00+00:00"}
  *     ]
  *   }
  */
@@ -40,7 +41,7 @@ final class ListOAuthConnectionsAction
     public function __construct(
         private readonly Security $security,
         private readonly iterable $providers,
-        private readonly ProviderFieldMapperInterface $fieldMapper,
+        private readonly OAuthIdentityRepositoryInterface $oauthIdentityRepository,
     ) {
     }
 
@@ -57,10 +58,19 @@ final class ListOAuthConnectionsAction
 
         $customer = $user->getCustomer();
 
-        if (!$customer instanceof OAuthIdentityInterface) {
+        if (!$customer instanceof CustomerInterface) {
             return new JsonResponse([
                 'connections' => [],
             ]);
+        }
+
+        // Get all OAuth identities for this customer
+        $identities = $this->oauthIdentityRepository->findAllByCustomer($customer);
+
+        // Build a lookup map of connected providers
+        $connectedProviders = [];
+        foreach ($identities as $identity) {
+            $connectedProviders[$identity->getProvider()] = $identity;
         }
 
         $connections = [];
@@ -78,13 +88,14 @@ final class ListOAuthConnectionsAction
                 ? $provider->getDisplayName()
                 : ucfirst($providerName);
 
-            $providerId = $this->fieldMapper->getProviderId($customer, $providerName);
+            if (isset($connectedProviders[$providerName])) {
+                $identity = $connectedProviders[$providerName];
+                $connectedAt = $identity->getConnectedAt();
 
-            if ($providerId !== null) {
                 $connections[] = [
                     'provider' => $providerName,
                     'displayName' => $displayName,
-                    'connectedAt' => null, // Could be enhanced with timestamp if stored
+                    'connectedAt' => $connectedAt?->format(DateTimeInterface::ATOM),
                 ];
             }
         }

@@ -6,12 +6,12 @@ namespace Marac\SyliusHeadlessOAuthBundle\Tests\Resolver;
 
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentity;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
 use Marac\SyliusHeadlessOAuthBundle\Event\OAuthPreUserCreateEvent;
 use Marac\SyliusHeadlessOAuthBundle\Event\OAuthProviderLinkedEvent;
-use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
-use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper;
+use Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver;
 use Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolveResult;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -30,7 +30,7 @@ class UserResolverTest extends TestCase
     private FactoryInterface&MockObject $customerFactory;
     private FactoryInterface&MockObject $shopUserFactory;
     private EntityManagerInterface&MockObject $entityManager;
-    private ProviderFieldMapper $fieldMapper;
+    private OAuthIdentityRepositoryInterface&MockObject $oauthIdentityRepository;
     private ClockInterface $clock;
     private EventDispatcherInterface&MockObject $eventDispatcher;
     private UserResolver $resolver;
@@ -41,7 +41,7 @@ class UserResolverTest extends TestCase
         $this->customerFactory = $this->createMock(FactoryInterface::class);
         $this->shopUserFactory = $this->createMock(FactoryInterface::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        $this->fieldMapper = new ProviderFieldMapper();
+        $this->oauthIdentityRepository = $this->createMock(OAuthIdentityRepositoryInterface::class);
         $this->clock = new MockClock();
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -50,7 +50,7 @@ class UserResolverTest extends TestCase
             customerFactory: $this->customerFactory,
             shopUserFactory: $this->shopUserFactory,
             entityManager: $this->entityManager,
-            fieldMapper: $this->fieldMapper,
+            oauthIdentityRepository: $this->oauthIdentityRepository,
             clock: $this->clock,
             eventDispatcher: $this->eventDispatcher,
         );
@@ -67,14 +67,17 @@ class UserResolverTest extends TestCase
         );
 
         $shopUser = $this->createMock(ShopUserInterface::class);
-        $customer = $this->createCustomerWithOAuthMock();
+        $customer = $this->createMock(CustomerInterface::class);
         $customer->method('getUser')->willReturn($shopUser);
 
-        $this->customerRepository
+        $oauthIdentity = $this->createMock(OAuthIdentityInterface::class);
+        $oauthIdentity->method('getCustomer')->willReturn($customer);
+
+        $this->oauthIdentityRepository
             ->expects($this->once())
-            ->method('findOneBy')
-            ->with(['googleId' => 'google-123'])
-            ->willReturn($customer);
+            ->method('findByProviderIdentifier')
+            ->with('google', 'google-123')
+            ->willReturn($oauthIdentity);
 
         $result = $this->resolver->resolve($userData);
 
@@ -92,14 +95,17 @@ class UserResolverTest extends TestCase
         );
 
         $shopUser = $this->createMock(ShopUserInterface::class);
-        $customer = $this->createCustomerWithOAuthMock();
+        $customer = $this->createMock(CustomerInterface::class);
         $customer->method('getUser')->willReturn($shopUser);
 
-        $this->customerRepository
+        $oauthIdentity = $this->createMock(OAuthIdentityInterface::class);
+        $oauthIdentity->method('getCustomer')->willReturn($customer);
+
+        $this->oauthIdentityRepository
             ->expects($this->once())
-            ->method('findOneBy')
-            ->with(['appleId' => 'apple-456'])
-            ->willReturn($customer);
+            ->method('findByProviderIdentifier')
+            ->with('apple', 'apple-456')
+            ->willReturn($oauthIdentity);
 
         $result = $this->resolver->resolve($userData);
 
@@ -119,30 +125,30 @@ class UserResolverTest extends TestCase
         );
 
         $shopUser = $this->createMock(ShopUserInterface::class);
-        $customer = $this->createCustomerWithOAuthMock();
+        $customer = $this->createMock(CustomerInterface::class);
         $customer->method('getUser')->willReturn($shopUser);
         $customer->method('getFirstName')->willReturn('Jane');
         $customer->method('getLastName')->willReturn('Smith');
 
-        // First lookup by provider ID returns null
+        // Not found by provider ID
+        $this->oauthIdentityRepository
+            ->expects($this->once())
+            ->method('findByProviderIdentifier')
+            ->with('google', 'google-new-789')
+            ->willReturn(null);
+
+        // Found by email
         $this->customerRepository
-            ->expects($this->exactly(2))
+            ->expects($this->once())
             ->method('findOneBy')
-            ->willReturnCallback(function (array $criteria) use ($customer) {
-                if (isset($criteria['googleId'])) {
-                    return null; // Not found by provider ID
-                }
-                if (isset($criteria['email'])) {
-                    return $customer; // Found by email
-                }
+            ->with(['email' => 'email-match@example.com'])
+            ->willReturn($customer);
 
-                return null;
-            });
-
-        // Expect the provider ID to be linked
-        $customer->expects($this->once())
-            ->method('setGoogleId')
-            ->with('google-new-789');
+        // Expect the OAuthIdentity to be persisted
+        $this->entityManager
+            ->expects($this->once())
+            ->method('persist')
+            ->with($this->isInstanceOf(OAuthIdentity::class));
 
         $this->entityManager
             ->expects($this->once())
@@ -174,12 +180,18 @@ class UserResolverTest extends TestCase
             lastName: 'User',
         );
 
-        // Not found by provider ID or email
+        // Not found by provider ID
+        $this->oauthIdentityRepository
+            ->expects($this->once())
+            ->method('findByProviderIdentifier')
+            ->willReturn(null);
+
+        // Not found by email
         $this->customerRepository
             ->method('findOneBy')
             ->willReturn(null);
 
-        $newCustomer = $this->createCustomerWithOAuthMock();
+        $newCustomer = $this->createMock(CustomerInterface::class);
         $newShopUser = $this->createMock(ShopUserInterface::class);
 
         $this->customerFactory
@@ -196,7 +208,6 @@ class UserResolverTest extends TestCase
         $newCustomer->expects($this->once())->method('setEmail')->with('newuser@example.com');
         $newCustomer->expects($this->once())->method('setFirstName')->with('New');
         $newCustomer->expects($this->once())->method('setLastName')->with('User');
-        $newCustomer->expects($this->once())->method('setGoogleId')->with('google-brand-new');
 
         // Expect shop user to be configured
         $newShopUser->expects($this->once())->method('setCustomer')->with($newCustomer);
@@ -214,8 +225,8 @@ class UserResolverTest extends TestCase
                 OAuthPreUserCreateEvent::NAME,
             );
 
-        // Expect persistence
-        $this->entityManager->expects($this->exactly(2))->method('persist');
+        // Expect persistence of customer, oauth identity, and shop user
+        $this->entityManager->expects($this->exactly(3))->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
 
         $result = $this->resolver->resolve($userData);
@@ -233,14 +244,17 @@ class UserResolverTest extends TestCase
             email: 'customeronly@example.com',
         );
 
-        $customer = $this->createCustomerWithOAuthMock();
+        $customer = $this->createMock(CustomerInterface::class);
         $customer->method('getUser')->willReturn(null); // Customer exists but no ShopUser
 
-        $this->customerRepository
+        $oauthIdentity = $this->createMock(OAuthIdentityInterface::class);
+        $oauthIdentity->method('getCustomer')->willReturn($customer);
+
+        $this->oauthIdentityRepository
             ->expects($this->once())
-            ->method('findOneBy')
-            ->with(['appleId' => 'apple-existing-no-user'])
-            ->willReturn($customer);
+            ->method('findByProviderIdentifier')
+            ->with('apple', 'apple-existing-no-user')
+            ->willReturn($oauthIdentity);
 
         $newShopUser = $this->createMock(ShopUserInterface::class);
 
@@ -275,29 +289,27 @@ class UserResolverTest extends TestCase
         );
 
         $shopUser = $this->createMock(ShopUserInterface::class);
-        $customer = $this->createCustomerWithOAuthMock();
+        $customer = $this->createMock(CustomerInterface::class);
         $customer->method('getUser')->willReturn($shopUser);
         $customer->method('getFirstName')->willReturn(null); // Name not set yet
         $customer->method('getLastName')->willReturn(null);
 
-        // Found by email, not by provider ID
-        $this->customerRepository
-            ->method('findOneBy')
-            ->willReturnCallback(function (array $criteria) use ($customer) {
-                if (isset($criteria['appleId'])) {
-                    return null;
-                }
-                if (isset($criteria['email'])) {
-                    return $customer;
-                }
+        // Not found by provider ID
+        $this->oauthIdentityRepository
+            ->expects($this->once())
+            ->method('findByProviderIdentifier')
+            ->willReturn(null);
 
-                return null;
-            });
+        // Found by email
+        $this->customerRepository
+            ->expects($this->once())
+            ->method('findOneBy')
+            ->with(['email' => 'firsttime@example.com'])
+            ->willReturn($customer);
 
         // Expect name to be set since it was null
         $customer->expects($this->once())->method('setFirstName')->with('First');
         $customer->expects($this->once())->method('setLastName')->with('Timer');
-        $customer->expects($this->once())->method('setAppleId')->with('apple-first-login');
 
         // Provider linked event should be dispatched
         $this->eventDispatcher
@@ -326,23 +338,22 @@ class UserResolverTest extends TestCase
         );
 
         $shopUser = $this->createMock(ShopUserInterface::class);
-        $customer = $this->createCustomerWithOAuthMock();
+        $customer = $this->createMock(CustomerInterface::class);
         $customer->method('getUser')->willReturn($shopUser);
         $customer->method('getFirstName')->willReturn('Existing'); // Already has name
         $customer->method('getLastName')->willReturn('Name');
 
-        $this->customerRepository
-            ->method('findOneBy')
-            ->willReturnCallback(function (array $criteria) use ($customer) {
-                if (isset($criteria['googleId'])) {
-                    return null;
-                }
-                if (isset($criteria['email'])) {
-                    return $customer;
-                }
+        // Not found by provider ID
+        $this->oauthIdentityRepository
+            ->expects($this->once())
+            ->method('findByProviderIdentifier')
+            ->willReturn(null);
 
-                return null;
-            });
+        // Found by email
+        $this->customerRepository
+            ->expects($this->once())
+            ->method('findOneBy')
+            ->willReturn($customer);
 
         // Name should NOT be overwritten
         $customer->expects($this->never())->method('setFirstName');
@@ -351,9 +362,9 @@ class UserResolverTest extends TestCase
         $this->resolver->resolve($userData);
     }
 
-    public function testUnknownProviderUsesOidcIdField(): void
+    public function testUnknownProviderCreatesOAuthIdentity(): void
     {
-        // Unknown providers (like custom OIDC) should fall back to using the oidcId field
+        // Unknown providers (like custom OIDC) should create OAuthIdentity records
         $userData = new OAuthUserData(
             provider: 'keycloak',
             providerId: 'keycloak-user-123',
@@ -361,20 +372,16 @@ class UserResolverTest extends TestCase
         );
 
         // Setup: new user flow - not found by provider ID or email
+        $this->oauthIdentityRepository
+            ->method('findByProviderIdentifier')
+            ->willReturn(null);
+
         $this->customerRepository
             ->method('findOneBy')
             ->willReturn(null);
 
-        // Create a mock that implements both interfaces
-        $customer = $this->createMock(CustomerWithOAuth::class);
-
-        // Track what values are set
-        $oidcIdSet = null;
-
+        $customer = $this->createMock(CustomerInterface::class);
         $customer->method('getUser')->willReturn(null);
-        $customer->method('setOidcId')->willReturnCallback(function ($id) use (&$oidcIdSet): void {
-            $oidcIdSet = $id;
-        });
 
         $this->customerFactory
             ->method('createNew')
@@ -389,42 +396,30 @@ class UserResolverTest extends TestCase
             ->method('createNew')
             ->willReturn($shopUser);
 
-        $result = $this->resolver->resolve($userData);
-
-        // Verify the oidcId field was set (unknown providers fall back to oidcId)
-        self::assertSame('keycloak-user-123', $oidcIdSet);
-        self::assertTrue($result->isNewUser);
-    }
-
-    public function testThrowsExceptionWhenCustomerDoesNotImplementInterface(): void
-    {
-        $userData = new OAuthUserData(
-            provider: 'google',
-            providerId: 'google-interface-test',
-            email: 'interface@example.com',
-        );
-
-        // Not found by provider ID, found by email
-        $regularCustomer = $this->createMock(CustomerInterface::class);
-        $regularCustomer->method('getUser')->willReturn($this->createMock(ShopUserInterface::class));
-
-        $this->customerRepository
-            ->method('findOneBy')
-            ->willReturnCallback(function (array $criteria) use ($regularCustomer) {
-                if (isset($criteria['googleId'])) {
-                    return null;
-                }
-                if (isset($criteria['email'])) {
-                    return $regularCustomer; // Returns customer without OAuthIdentityInterface
-                }
-
-                return null;
+        // Track persisted entities
+        $persistedEntities = [];
+        $this->entityManager
+            ->method('persist')
+            ->willReturnCallback(function ($entity) use (&$persistedEntities): void {
+                $persistedEntities[] = $entity;
             });
 
-        $this->expectException(OAuthException::class);
-        $this->expectExceptionMessage('must implement');
+        $result = $this->resolver->resolve($userData);
 
-        $this->resolver->resolve($userData);
+        // Verify an OAuthIdentity was persisted with correct provider and identifier
+        $oauthIdentity = null;
+        foreach ($persistedEntities as $entity) {
+            if ($entity instanceof OAuthIdentity) {
+                $oauthIdentity = $entity;
+
+                break;
+            }
+        }
+
+        $this->assertNotNull($oauthIdentity, 'OAuthIdentity should be persisted');
+        $this->assertSame('keycloak', $oauthIdentity->getProvider());
+        $this->assertSame('keycloak-user-123', $oauthIdentity->getIdentifier());
+        $this->assertTrue($result->isNewUser);
     }
 
     public function testSetsVerifiedAtOnNewUser(): void
@@ -437,9 +432,10 @@ class UserResolverTest extends TestCase
             lastName: 'User',
         );
 
+        $this->oauthIdentityRepository->method('findByProviderIdentifier')->willReturn(null);
         $this->customerRepository->method('findOneBy')->willReturn(null);
 
-        $newCustomer = $this->createCustomerWithOAuthMock();
+        $newCustomer = $this->createMock(CustomerInterface::class);
         $newShopUser = $this->createMock(ShopUserInterface::class);
 
         $this->customerFactory->method('createNew')->willReturn($newCustomer);
@@ -467,9 +463,10 @@ class UserResolverTest extends TestCase
             lastName: 'Test',
         );
 
+        $this->oauthIdentityRepository->method('findByProviderIdentifier')->willReturn(null);
         $this->customerRepository->method('findOneBy')->willReturn(null);
 
-        $newCustomer = $this->createCustomerWithOAuthMock();
+        $newCustomer = $this->createMock(CustomerInterface::class);
         $newShopUser = $this->createMock(ShopUserInterface::class);
 
         $this->customerFactory->method('createNew')->willReturn($newCustomer);
@@ -498,23 +495,22 @@ class UserResolverTest extends TestCase
         );
 
         $shopUser = $this->createMock(ShopUserInterface::class);
-        $customer = $this->createCustomerWithOAuthMock();
+        $customer = $this->createMock(CustomerInterface::class);
         $customer->method('getUser')->willReturn($shopUser);
         $customer->method('getFirstName')->willReturn('Existing');
         $customer->method('getLastName')->willReturn('Name');
 
-        $this->customerRepository
-            ->method('findOneBy')
-            ->willReturnCallback(function (array $criteria) use ($customer) {
-                if (isset($criteria['googleId'])) {
-                    return null;
-                }
-                if (isset($criteria['email'])) {
-                    return $customer;
-                }
+        // Not found by provider ID
+        $this->oauthIdentityRepository
+            ->expects($this->once())
+            ->method('findByProviderIdentifier')
+            ->willReturn(null);
 
-                return null;
-            });
+        // Found by email
+        $this->customerRepository
+            ->expects($this->once())
+            ->method('findOneBy')
+            ->willReturn($customer);
 
         $this->eventDispatcher
             ->expects($this->once())
@@ -540,7 +536,7 @@ class UserResolverTest extends TestCase
             customerFactory: $this->customerFactory,
             shopUserFactory: $this->shopUserFactory,
             entityManager: $this->entityManager,
-            fieldMapper: $this->fieldMapper,
+            oauthIdentityRepository: $this->oauthIdentityRepository,
             clock: $this->clock,
             eventDispatcher: null, // No event dispatcher
         );
@@ -551,9 +547,10 @@ class UserResolverTest extends TestCase
             email: 'nodispatcher@example.com',
         );
 
+        $this->oauthIdentityRepository->method('findByProviderIdentifier')->willReturn(null);
         $this->customerRepository->method('findOneBy')->willReturn(null);
 
-        $newCustomer = $this->createCustomerWithOAuthMock();
+        $newCustomer = $this->createMock(CustomerInterface::class);
         $newShopUser = $this->createMock(ShopUserInterface::class);
 
         $this->customerFactory->method('createNew')->willReturn($newCustomer);
@@ -565,19 +562,4 @@ class UserResolverTest extends TestCase
         $this->assertInstanceOf(UserResolveResult::class, $result);
         $this->assertTrue($result->isNewUser);
     }
-
-    /**
-     * Creates a mock that implements both CustomerInterface and OAuthIdentityInterface.
-     */
-    private function createCustomerWithOAuthMock(): CustomerInterface&OAuthIdentityInterface&MockObject
-    {
-        return $this->createMock(CustomerWithOAuth::class);
-    }
-}
-
-/**
- * Helper interface for creating mocks that implement both required interfaces.
- */
-interface CustomerWithOAuth extends CustomerInterface, OAuthIdentityInterface
-{
 }

@@ -8,8 +8,6 @@ use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityTrait;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
@@ -17,19 +15,15 @@ use Sylius\Component\Review\Model\ReviewInterface;
 use Sylius\Component\User\Model\UserInterface;
 
 /**
- * Minimal test customer entity that uses OAuthIdentityTrait.
+ * Minimal test customer entity for functional testing.
  *
- * This entity is used for functional testing to verify:
- * - The trait's getters/setters work
- * - Doctrine ORM column metadata is correct
- * - Database persistence of OAuth IDs
+ * OAuth identities are now stored in a separate sylius_oauth_identity table,
+ * so this entity no longer needs any OAuth-related fields.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'test_customer')]
-class TestCustomer implements CustomerInterface, OAuthIdentityInterface
+class TestCustomer implements CustomerInterface
 {
-    use OAuthIdentityTrait;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

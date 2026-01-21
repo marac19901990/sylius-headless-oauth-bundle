@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Separate OAuthIdentity Entity
+- New `OAuthIdentity` entity with its own `sylius_oauth_identity` table
+- `OAuthIdentityRepositoryInterface` with methods for finding identities by provider/customer
+- Automatic Doctrine mapping via XML configuration
+- `connected_at` timestamp for each OAuth connection
+- Support for unlimited providers per customer (no more field-per-provider limitation)
+
 #### Generic OpenID Connect Provider
 - Generic OIDC provider supporting any OIDC-compliant identity provider (Keycloak, Auth0, Okta, Azure AD, etc.)
 - Auto-discovery of endpoints via `.well-known/openid-configuration`
@@ -16,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Userinfo endpoint fallback for providers that don't include claims in id_token
 - Token refresh support
 - Configuration via YAML with support for multiple named OIDC providers
-- New `oidcId` field in `OAuthIdentityInterface` and `OAuthIdentityTrait`
 - `OidcDiscoveryService` with caching (1-hour TTL) for OIDC configuration
 
 #### Admin UI Integration
@@ -27,8 +33,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Translation support (English) for admin UI labels
 
 ### Changed
-- `ProviderFieldMapper` now supports custom OIDC providers by falling back to `oidcId` field for unknown providers
-- Updated entity interface to include `getOidcId()`/`setOidcId()` methods
+- **BREAKING:** OAuth identities now stored in separate `sylius_oauth_identity` table instead of Customer entity columns
+- Users no longer need to modify their Customer entity - the bundle handles everything automatically
+- `UserResolver` now uses `OAuthIdentityRepositoryInterface` instead of `ProviderFieldMapper`
+- `ListOAuthConnectionsAction` now returns actual `connectedAt` timestamps
+- `UnlinkOAuthConnectionAction` now removes `OAuthIdentity` records instead of nullifying fields
+- `OAuthExtension` (Twig) now uses repository to fetch connected providers
+- Install command no longer shows entity modification instructions
+
+### Removed
+- `OAuthIdentityTrait` - no longer needed as identities are stored in separate table
+- `OAuthIdentityInterface` (old version with getGoogleId/setGoogleId methods)
+- `ProviderFieldMapper` and `ProviderFieldMapperInterface` - replaced by repository pattern
 
 ## [1.0.0] - 2026-01-20
 

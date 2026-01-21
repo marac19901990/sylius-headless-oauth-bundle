@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Tests\Command;
 
-use Doctrine\ORM\EntityManagerInterface;
-use Exception;
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker;
 use Marac\SyliusHeadlessOAuthBundle\Command\InstallCommand;
 use Marac\SyliusHeadlessOAuthBundle\Provider\ConfigurableOAuthProviderInterface;
@@ -21,7 +19,6 @@ class InstallCommandTest extends TestCase
     private string $tempDir;
     private Filesystem $filesystem;
     private ParameterBagInterface $parameterBag;
-    private EntityManagerInterface $entityManager;
 
     protected function setUp(): void
     {
@@ -32,10 +29,6 @@ class InstallCommandTest extends TestCase
 
         $this->parameterBag = $this->createMock(ParameterBagInterface::class);
         $this->parameterBag->method('has')->willReturn(false);
-
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        $this->entityManager->method('getClassMetadata')
-            ->willThrowException(new Exception('Not mapped'));
     }
 
     protected function tearDown(): void
@@ -131,18 +124,6 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('Skipping configuration scaffolding (--skip-config)', $output);
     }
 
-    public function testDisplaysEntitySetupInstructions(): void
-    {
-        $commandTester = $this->createCommandTester([]);
-        $commandTester->execute(['--skip-config' => true]);
-
-        $output = $commandTester->getDisplay();
-
-        $this->assertStringContainsString('Step 3: Entity Setup', $output);
-        $this->assertStringContainsString('OAuthIdentityInterface', $output);
-        $this->assertStringContainsString('OAuthIdentityTrait', $output);
-    }
-
     public function testDisplaysMigrationInstructions(): void
     {
         $commandTester = $this->createCommandTester([]);
@@ -150,9 +131,26 @@ class InstallCommandTest extends TestCase
 
         $output = $commandTester->getDisplay();
 
-        $this->assertStringContainsString('Step 4: Database Migration', $output);
+        $this->assertStringContainsString('Step 3: Database Migration', $output);
+        $this->assertStringContainsString('sylius_oauth_identity', $output);
         $this->assertStringContainsString('doctrine:migrations:diff', $output);
         $this->assertStringContainsString('doctrine:migrations:migrate', $output);
+        // Should explain that no Customer entity changes are needed
+        $this->assertStringContainsString("don't need to modify your Customer entity", $output);
+    }
+
+    public function testDoesNotMentionEntityModification(): void
+    {
+        $commandTester = $this->createCommandTester([]);
+        $commandTester->execute(['--skip-config' => true]);
+
+        $output = $commandTester->getDisplay();
+
+        // Should NOT contain references to modifying Customer entity
+        $this->assertStringNotContainsString('OAuthIdentityTrait', $output);
+        $this->assertStringNotContainsString('implements OAuthIdentityInterface', $output);
+        $this->assertStringNotContainsString('Update Customer Entity', $output);
+        $this->assertStringNotContainsString('Entity Setup', $output);
     }
 
     public function testDisplaysEnvironmentVariablesCheck(): void
@@ -162,7 +160,7 @@ class InstallCommandTest extends TestCase
 
         $output = $commandTester->getDisplay();
 
-        $this->assertStringContainsString('Step 5: Environment Variables', $output);
+        $this->assertStringContainsString('Step 4: Environment Variables', $output);
         $this->assertStringContainsString('GOOGLE_CLIENT_ID', $output);
         $this->assertStringContainsString('APPLE_CLIENT_ID', $output);
         $this->assertStringContainsString('FACEBOOK_CLIENT_ID', $output);
@@ -181,7 +179,7 @@ class InstallCommandTest extends TestCase
 
         $output = $commandTester->getDisplay();
 
-        $this->assertStringContainsString('Step 6: Provider Health Check', $output);
+        $this->assertStringContainsString('Step 5: Provider Health Check', $output);
         $this->assertStringContainsString('Google', $output);
         $this->assertStringContainsString('Enabled', $output);
     }
@@ -203,7 +201,7 @@ class InstallCommandTest extends TestCase
 
         $output = $commandTester->getDisplay();
 
-        $this->assertStringContainsString('Step 7: Next Steps Checklist', $output);
+        $this->assertStringContainsString('Step 6: Next Steps Checklist', $output);
         $this->assertStringContainsString('sylius:oauth:check-providers', $output);
     }
 
@@ -215,7 +213,6 @@ class InstallCommandTest extends TestCase
             $this->tempDir,
             $this->filesystem,
             $this->parameterBag,
-            $this->entityManager,
         );
 
         $help = $command->getHelp();
@@ -234,7 +231,6 @@ class InstallCommandTest extends TestCase
             $this->tempDir,
             $this->filesystem,
             $this->parameterBag,
-            $this->entityManager,
         );
         $definition = $command->getDefinition();
 
@@ -254,7 +250,6 @@ class InstallCommandTest extends TestCase
             $this->tempDir,
             $this->filesystem,
             $this->parameterBag,
-            $this->entityManager,
         );
 
         $application = new Application();

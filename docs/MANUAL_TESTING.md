@@ -79,35 +79,9 @@ bin/console sylius:oauth:install
 - [ ] Config file created at `config/packages/sylius_headless_oauth.yaml`
 - [ ] All requirements pass (PHP 8.2+, required extensions)
 
-### 1.3 Update Customer Entity
+### 1.3 Run Database Migration
 
-Add the OAuth trait to your Customer entity at `src/Entity/Customer/Customer.php`:
-
-```php
-<?php
-
-declare(strict_types=1);
-
-namespace App\Entity\Customer;
-
-use Doctrine\ORM\Mapping as ORM;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityTrait;
-use Sylius\Component\Core\Model\Customer as BaseCustomer;
-
-#[ORM\Entity]
-#[ORM\Table(name: 'sylius_customer')]
-class Customer extends BaseCustomer implements OAuthIdentityInterface
-{
-    use OAuthIdentityTrait;
-}
-```
-
-**Verify:**
-- [ ] No syntax errors
-- [ ] Entity compiles correctly (`bin/console cache:clear`)
-
-### 1.4 Run Database Migration
+The bundle uses a separate table for OAuth identities, so **no Customer entity changes are needed**.
 
 ```bash
 bin/console doctrine:migrations:diff
@@ -115,18 +89,19 @@ bin/console doctrine:migrations:migrate
 ```
 
 **Verify:**
-- [ ] Migration creates 6 new columns on `sylius_customer` table:
+- [ ] Migration creates the `sylius_oauth_identity` table:
 
 | Column | Type | Attributes |
 |--------|------|------------|
-| `google_id` | VARCHAR(255) | nullable, unique |
-| `apple_id` | VARCHAR(255) | nullable, unique |
-| `facebook_id` | VARCHAR(255) | nullable, unique |
-| `github_id` | VARCHAR(255) | nullable, unique |
-| `linkedin_id` | VARCHAR(255) | nullable, unique |
-| `oidc_id` | VARCHAR(255) | nullable, unique |
+| `id` | INT | auto_increment, primary key |
+| `customer_id` | INT | not null, foreign key |
+| `provider` | VARCHAR(50) | not null |
+| `identifier` | VARCHAR(255) | not null |
+| `connected_at` | DATETIME | nullable |
 
-### 1.5 Configure Providers
+- [ ] Unique constraints: `(customer_id, provider)` and `(provider, identifier)`
+
+### 1.4 Configure Providers
 
 Edit `.env.local`:
 
@@ -658,8 +633,7 @@ class OAuthTestSubscriber implements EventSubscriberInterface
 |------|--------|-------|
 | Bundle installation (composer) | ⬜ | |
 | Install command (`sylius:oauth:install`) | ⬜ | |
-| Customer entity updated | ⬜ | |
-| Database migration executed | ⬜ | |
+| Database migration executed | ⬜ | Creates `sylius_oauth_identity` table |
 | Provider credentials configured | ⬜ | |
 | Health check passes | ⬜ | |
 
@@ -740,28 +714,34 @@ bin/console cache:clear
 ### Database Inspection
 
 ```sql
--- Check OAuth columns on customer table
-DESCRIBE sylius_customer;
+-- Check OAuth identity table structure
+DESCRIBE sylius_oauth_identity;
 
--- Find customers with OAuth connections
-SELECT id, email, google_id, apple_id, github_id, facebook_id, linkedin_id, oidc_id
-FROM sylius_customer
-WHERE google_id IS NOT NULL
-   OR apple_id IS NOT NULL
-   OR github_id IS NOT NULL
-   OR facebook_id IS NOT NULL
-   OR linkedin_id IS NOT NULL
-   OR oidc_id IS NOT NULL;
+-- Find all OAuth connections with customer info
+SELECT
+    oi.id,
+    c.email,
+    oi.provider,
+    oi.identifier,
+    oi.connected_at
+FROM sylius_oauth_identity oi
+JOIN sylius_customer c ON c.id = oi.customer_id;
 
 -- Count customers by provider
 SELECT
-    COUNT(google_id) as google_users,
-    COUNT(apple_id) as apple_users,
-    COUNT(facebook_id) as facebook_users,
-    COUNT(github_id) as github_users,
-    COUNT(linkedin_id) as linkedin_users,
-    COUNT(oidc_id) as oidc_users
-FROM sylius_customer;
+    provider,
+    COUNT(*) as user_count
+FROM sylius_oauth_identity
+GROUP BY provider;
+
+-- Find customers with multiple OAuth providers
+SELECT
+    customer_id,
+    GROUP_CONCAT(provider) as providers,
+    COUNT(*) as provider_count
+FROM sylius_oauth_identity
+GROUP BY customer_id
+HAVING provider_count > 1;
 ```
 
 ### Log Monitoring

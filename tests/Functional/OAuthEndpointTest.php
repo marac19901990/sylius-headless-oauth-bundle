@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Tests\Functional;
 
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
+use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentity;
 use Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Entity\TestCustomer;
 use Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Mock\MockHttpClientFactory;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
@@ -91,9 +93,13 @@ class OAuthEndpointTest extends WebTestCase
         // Verify customer was created in database
         $customer = $this->entityManager->getRepository(TestCustomer::class)->findOneBy(['email' => 'test@example.com']);
         self::assertNotNull($customer);
-        self::assertEquals('google_user_123', $customer->getGoogleId());
         self::assertEquals('Test', $customer->getFirstName());
         self::assertEquals('User', $customer->getLastName());
+
+        // Verify OAuth identity was created
+        $oauthIdentity = $this->findOAuthIdentity('google', 'google_user_123');
+        self::assertNotNull($oauthIdentity);
+        self::assertSame($customer, $oauthIdentity->getCustomer());
     }
 
     public function testFacebookOAuthSuccess(): void
@@ -125,7 +131,11 @@ class OAuthEndpointTest extends WebTestCase
         // Verify customer was created in database
         $customer = $this->entityManager->getRepository(TestCustomer::class)->findOneBy(['email' => 'test@example.com']);
         self::assertNotNull($customer);
-        self::assertEquals('facebook_user_123', $customer->getFacebookId());
+
+        // Verify OAuth identity was created
+        $oauthIdentity = $this->findOAuthIdentity('facebook', 'facebook_user_123');
+        self::assertNotNull($oauthIdentity);
+        self::assertSame($customer, $oauthIdentity->getCustomer());
     }
 
     public function testAppleOAuthSuccess(): void
@@ -156,7 +166,11 @@ class OAuthEndpointTest extends WebTestCase
         // Verify customer was created in database
         $customer = $this->entityManager->getRepository(TestCustomer::class)->findOneBy(['email' => 'test@privaterelay.appleid.com']);
         self::assertNotNull($customer);
-        self::assertEquals('apple_user_123', $customer->getAppleId());
+
+        // Verify OAuth identity was created
+        $oauthIdentity = $this->findOAuthIdentity('apple', 'apple_user_123');
+        self::assertNotNull($oauthIdentity);
+        self::assertSame($customer, $oauthIdentity->getCustomer());
     }
 
     public function testInvalidProviderReturns404(): void
@@ -306,22 +320,31 @@ class OAuthEndpointTest extends WebTestCase
         // Verify new customer was created
         $customer = $this->entityManager->getRepository(TestCustomer::class)->findOneBy(['email' => 'newuser@example.com']);
         self::assertNotNull($customer);
-        self::assertEquals('google_new_user_id', $customer->getGoogleId());
         self::assertEquals('New', $customer->getFirstName());
         self::assertEquals('User', $customer->getLastName());
         self::assertNotNull($customer->getUser());
+
+        // Verify OAuth identity was created
+        $oauthIdentity = $this->findOAuthIdentity('google', 'google_new_user_id');
+        self::assertNotNull($oauthIdentity);
+        self::assertSame($customer, $oauthIdentity->getCustomer());
     }
 
     public function testExistingUserReturnsCustomerId(): void
     {
-        // Create existing customer with Google ID
+        // Create existing customer with OAuth identity
         $existingCustomer = new TestCustomer();
         $existingCustomer->setEmail('existing@example.com');
         $existingCustomer->setFirstName('Existing');
         $existingCustomer->setLastName('User');
-        $existingCustomer->setGoogleId('existing_google_id');
+
+        $oauthIdentity = new OAuthIdentity();
+        $oauthIdentity->setProvider('google');
+        $oauthIdentity->setIdentifier('existing_google_id');
+        $oauthIdentity->setCustomer($existingCustomer);
 
         $this->entityManager->persist($existingCustomer);
+        $this->entityManager->persist($oauthIdentity);
         $this->entityManager->flush();
 
         $existingId = $existingCustomer->getId();
@@ -362,12 +385,12 @@ class OAuthEndpointTest extends WebTestCase
 
     public function testProviderLinkingForExistingEmailUser(): void
     {
-        // Create existing customer without Google ID (e.g., registered via email)
+        // Create existing customer without OAuth identity (e.g., registered via email)
         $existingCustomer = new TestCustomer();
         $existingCustomer->setEmail('link@example.com');
         $existingCustomer->setFirstName('Link');
         $existingCustomer->setLastName('Test');
-        // No Google ID set
+        // No OAuth identity linked
 
         $this->entityManager->persist($existingCustomer);
         $this->entityManager->flush();
@@ -408,8 +431,10 @@ class OAuthEndpointTest extends WebTestCase
         $updatedCustomer = $this->entityManager->getRepository(TestCustomer::class)->find($existingId);
         self::assertNotNull($updatedCustomer);
 
-        // Verify Google ID was linked to existing customer
-        self::assertEquals('new_google_id_for_link', $updatedCustomer->getGoogleId());
+        // Verify OAuth identity was linked to existing customer
+        $oauthIdentity = $this->findOAuthIdentity('google', 'new_google_id_for_link');
+        self::assertNotNull($oauthIdentity);
+        self::assertEquals($existingId, $oauthIdentity->getCustomer()->getId());
     }
 
     public function testRefreshTokenEndpoint(): void
@@ -456,34 +481,55 @@ class OAuthEndpointTest extends WebTestCase
         self::assertNotEmpty($content['token']);
     }
 
-    public function testOAuthIdentityTraitPersistence(): void
+    public function testOAuthIdentityPersistence(): void
     {
-        // Test that the OAuthIdentityTrait correctly persists OAuth IDs
+        // Test that OAuthIdentity entities are correctly persisted
         $customer = new TestCustomer();
-        $customer->setEmail('trait-test@example.com');
+        $customer->setEmail('identity-test@example.com');
 
-        // Test Google ID
-        $customer->setGoogleId('google_123');
-        self::assertEquals('google_123', $customer->getGoogleId());
-
-        // Test Apple ID
-        $customer->setAppleId('apple_456');
-        self::assertEquals('apple_456', $customer->getAppleId());
-
-        // Test Facebook ID
-        $customer->setFacebookId('facebook_789');
-        self::assertEquals('facebook_789', $customer->getFacebookId());
-
-        // Persist and verify in database
         $this->entityManager->persist($customer);
+
+        // Test Google identity
+        $googleIdentity = new OAuthIdentity();
+        $googleIdentity->setProvider('google');
+        $googleIdentity->setIdentifier('google_123');
+        $googleIdentity->setCustomer($customer);
+        $googleIdentity->setConnectedAt(new DateTimeImmutable());
+        $this->entityManager->persist($googleIdentity);
+
+        // Test Apple identity
+        $appleIdentity = new OAuthIdentity();
+        $appleIdentity->setProvider('apple');
+        $appleIdentity->setIdentifier('apple_456');
+        $appleIdentity->setCustomer($customer);
+        $appleIdentity->setConnectedAt(new DateTimeImmutable());
+        $this->entityManager->persist($appleIdentity);
+
+        // Test Facebook identity
+        $facebookIdentity = new OAuthIdentity();
+        $facebookIdentity->setProvider('facebook');
+        $facebookIdentity->setIdentifier('facebook_789');
+        $facebookIdentity->setCustomer($customer);
+        $this->entityManager->persist($facebookIdentity);
+
         $this->entityManager->flush();
         $this->entityManager->clear();
 
-        $loadedCustomer = $this->entityManager->getRepository(TestCustomer::class)->findOneBy(['email' => 'trait-test@example.com']);
+        // Reload and verify
+        $loadedGoogleIdentity = $this->findOAuthIdentity('google', 'google_123');
+        $loadedAppleIdentity = $this->findOAuthIdentity('apple', 'apple_456');
+        $loadedFacebookIdentity = $this->findOAuthIdentity('facebook', 'facebook_789');
+
+        self::assertNotNull($loadedGoogleIdentity);
+        self::assertNotNull($loadedAppleIdentity);
+        self::assertNotNull($loadedFacebookIdentity);
+
+        // All should belong to the same customer
+        $loadedCustomer = $this->entityManager->getRepository(TestCustomer::class)->findOneBy(['email' => 'identity-test@example.com']);
         self::assertNotNull($loadedCustomer);
-        self::assertEquals('google_123', $loadedCustomer->getGoogleId());
-        self::assertEquals('apple_456', $loadedCustomer->getAppleId());
-        self::assertEquals('facebook_789', $loadedCustomer->getFacebookId());
+        self::assertEquals($loadedCustomer->getId(), $loadedGoogleIdentity->getCustomer()->getId());
+        self::assertEquals($loadedCustomer->getId(), $loadedAppleIdentity->getCustomer()->getId());
+        self::assertEquals($loadedCustomer->getId(), $loadedFacebookIdentity->getCustomer()->getId());
     }
 
     public function testStateParameterIsEchoed(): void
@@ -512,5 +558,16 @@ class OAuthEndpointTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertArrayHasKey('state', $content);
         self::assertEquals($state, $content['state']);
+    }
+
+    /**
+     * Helper to find an OAuth identity by provider and identifier.
+     */
+    private function findOAuthIdentity(string $provider, string $identifier): ?OAuthIdentity
+    {
+        return $this->entityManager->getRepository(OAuthIdentity::class)->findOneBy([
+            'provider' => $provider,
+            'identifier' => $identifier,
+        ]);
     }
 }

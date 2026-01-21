@@ -21,6 +21,7 @@ final class SyliusHeadlessOAuthExtension extends Extension implements PrependExt
     public function prepend(ContainerBuilder $container): void
     {
         $this->prependTwigConfig($container);
+        $this->prependDoctrineConfig($container);
     }
 
     public function load(array $configs, ContainerBuilder $container): void
@@ -104,6 +105,26 @@ final class SyliusHeadlessOAuthExtension extends Extension implements PrependExt
         $container->prependExtensionConfig('twig', [
             'paths' => [
                 __DIR__ . '/../../templates' => 'SyliusHeadlessOAuth',
+            ],
+        ]);
+    }
+
+    private function prependDoctrineConfig(ContainerBuilder $container): void
+    {
+        if (!$container->hasExtension('doctrine')) {
+            return;
+        }
+
+        $container->prependExtensionConfig('doctrine', [
+            'orm' => [
+                'mappings' => [
+                    'SyliusHeadlessOAuthBundle' => [
+                        'type' => 'xml',
+                        'dir' => __DIR__ . '/../../config/doctrine',
+                        'prefix' => 'Marac\SyliusHeadlessOAuthBundle\Entity',
+                        'is_bundle' => false,
+                    ],
+                ],
             ],
         ]);
     }

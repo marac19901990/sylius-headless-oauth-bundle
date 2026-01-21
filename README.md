@@ -18,42 +18,22 @@ composer require marac19901990/sylius-headless-oauth-bundle
 
 # 2. Run the interactive installer
 bin/console sylius:oauth:install
-```
 
-**3. Update your Customer entity** (`src/Entity/Customer/Customer.php`):
-
-```php
-<?php
-
-namespace App\Entity\Customer;
-
-use Doctrine\ORM\Mapping as ORM;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityTrait;
-use Sylius\Component\Core\Model\Customer as BaseCustomer;
-
-#[ORM\Entity]
-#[ORM\Table(name: 'sylius_customer')]
-class Customer extends BaseCustomer implements OAuthIdentityInterface
-{
-    use OAuthIdentityTrait;
-}
-```
-
-```bash
-# 4. Create and run the migration
+# 3. Create and run the migration (creates the sylius_oauth_identity table)
 bin/console doctrine:migrations:diff
 bin/console doctrine:migrations:migrate
 
-# 5. Configure your OAuth provider in .env.local
+# 4. Configure your OAuth provider in .env.local
 echo "GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com" >> .env.local
 echo "GOOGLE_CLIENT_SECRET=your-client-secret" >> .env.local
 
-# 6. Test it!
+# 5. Test it!
 curl -X POST https://your-shop.com/api/v2/auth/oauth/google \
   -H "Content-Type: application/json" \
   -d '{"code": "auth-code-from-google", "redirectUri": "https://your-frontend.com/callback"}'
 ```
+
+**No Customer entity changes required!** The bundle uses a separate `sylius_oauth_identity` table to store OAuth connections.
 
 **Response:**
 ```json
@@ -184,43 +164,32 @@ KEYCLOAK_CLIENT_ID=your-keycloak-client-id
 KEYCLOAK_CLIENT_SECRET=your-keycloak-client-secret
 ```
 
-## Customer Entity Setup
+## Database Setup
 
-Your Customer entity must implement `OAuthIdentityInterface`. The easiest way is to use the provided trait:
+The bundle uses a separate `sylius_oauth_identity` table to store OAuth connections. **You don't need to modify your Customer entity!**
 
-```php
-<?php
-
-namespace App\Entity\Customer;
-
-use Doctrine\ORM\Mapping as ORM;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityTrait;
-use Sylius\Component\Core\Model\Customer as BaseCustomer;
-
-#[ORM\Entity]
-#[ORM\Table(name: 'sylius_customer')]
-class Customer extends BaseCustomer implements OAuthIdentityInterface
-{
-    use OAuthIdentityTrait;
-}
-```
-
-The trait automatically adds:
-- `googleId` column (varchar 255, nullable, unique)
-- `appleId` column (varchar 255, nullable, unique)
-- `facebookId` column (varchar 255, nullable, unique)
-- `githubId` column (varchar 255, nullable, unique)
-- `linkedinId` column (varchar 255, nullable, unique)
-- `oidcId` column (varchar 255, nullable, unique) - for generic OIDC providers
-- Getters and setters for all fields
-
-After adding the trait, create and run a migration:
+After installing the bundle, create and run the migration:
 
 ```bash
 bin/console doctrine:migrations:diff
 bin/console doctrine:migrations:migrate
 ```
+
+This creates the `sylius_oauth_identity` table with the following structure:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INT | Primary key |
+| `customer_id` | INT | Foreign key to sylius_customer |
+| `provider` | VARCHAR(50) | Provider name (google, apple, etc.) |
+| `identifier` | VARCHAR(255) | OAuth provider's user ID |
+| `connected_at` | DATETIME | When the connection was made |
+
+**Benefits of this approach:**
+- No changes to your existing Customer entity
+- Supports unlimited OAuth providers per customer
+- Each provider connection has its own timestamp
+- Easy to extend with custom providers
 
 ## API Endpoints
 
@@ -417,10 +386,10 @@ Unlink an OAuth provider from the current user's account. Requires authenticatio
 3. **Code exchange** - Your frontend sends the code to this bundle's endpoint
 4. **Token exchange** - Bundle exchanges code for tokens with the OAuth provider
 5. **User resolution** - Bundle finds or creates a Sylius user:
-   - First, searches by provider ID (googleId/appleId)
-   - If not found, searches by email
-   - If found by email, links the provider ID to the existing customer
-   - If not found at all, creates a new Customer and ShopUser
+   - First, searches by provider ID in `sylius_oauth_identity` table
+   - If not found, searches by email in the customer table
+   - If found by email, creates an OAuth identity record linking the provider
+   - If not found at all, creates a new Customer, ShopUser, and OAuth identity
 6. **JWT generation** - Returns a JWT token for API authentication
 
 ## Extending
@@ -467,7 +436,7 @@ services:
             - { name: 'sylius_headless_oauth.provider' }
 ```
 
-3. Add the provider ID field to your Customer entity and update `UserResolver` accordingly.
+The bundle automatically stores OAuth identities in the `sylius_oauth_identity` table, so you don't need to modify any entities.
 
 ## Events
 

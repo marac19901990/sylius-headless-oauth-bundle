@@ -4,33 +4,28 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Entity;
 
-interface OAuthIdentityInterface
+use DateTimeInterface;
+use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\Resource\Model\ResourceInterface;
+
+/**
+ * Interface for OAuth identity entities that link OAuth providers to customers.
+ */
+interface OAuthIdentityInterface extends ResourceInterface
 {
-    public function getGoogleId(): ?string;
+    public function getProvider(): string;
 
-    public function setGoogleId(?string $googleId): void;
+    public function setProvider(string $provider): void;
 
-    public function getAppleId(): ?string;
+    public function getIdentifier(): string;
 
-    public function setAppleId(?string $appleId): void;
+    public function setIdentifier(string $identifier): void;
 
-    public function getFacebookId(): ?string;
+    public function getConnectedAt(): ?DateTimeInterface;
 
-    public function setFacebookId(?string $facebookId): void;
+    public function setConnectedAt(?DateTimeInterface $connectedAt): void;
 
-    public function getGithubId(): ?string;
+    public function getCustomer(): CustomerInterface;
 
-    public function setGithubId(?string $githubId): void;
-
-    public function getLinkedinId(): ?string;
-
-    public function setLinkedinId(?string $linkedinId): void;
-
-    /**
-     * Get the OAuth provider ID for a generic OIDC provider.
-     * This is used when configuring custom OIDC providers (Keycloak, Auth0, Okta, etc.)
-     */
-    public function getOidcId(): ?string;
-
-    public function setOidcId(?string $oidcId): void;
+    public function setCustomer(CustomerInterface $customer): void;
 }

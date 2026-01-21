@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+    <entity name="Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentity" table="sylius_oauth_identity">
+        <id name="id" type="integer" column="id">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="provider" type="string" length="50" nullable="false"/>
+        <field name="identifier" type="string" length="255" nullable="false"/>
+        <field name="connectedAt" column="connected_at" type="datetime" nullable="true"/>
+
+        <many-to-one field="customer" target-entity="Sylius\Component\Core\Model\CustomerInterface">
+            <join-column name="customer_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+
+        <unique-constraints>
+            <unique-constraint columns="customer_id,provider" name="unique_customer_provider"/>
+            <unique-constraint columns="provider,identifier" name="unique_provider_identifier"/>
+        </unique-constraints>
+    </entity>
+
+</doctrine-mapping>

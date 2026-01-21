@@ -114,6 +114,9 @@ final class TestKernel extends Kernel
             'orm' => [
                 'auto_generate_proxy_classes' => true,
                 'auto_mapping' => false,
+                'resolve_target_entities' => [
+                    'Sylius\Component\Core\Model\CustomerInterface' => 'Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Entity\TestCustomer',
+                ],
                 'mappings' => [
                     'TestEntities' => [
                         'is_bundle' => false,
@@ -121,6 +124,13 @@ final class TestKernel extends Kernel
                         'dir' => '%kernel.project_dir%/tests/Functional/Entity',
                         'prefix' => 'Marac\SyliusHeadlessOAuthBundle\Tests\Functional\Entity',
                         'alias' => 'Test',
+                    ],
+                    'SyliusHeadlessOAuthBundle' => [
+                        'is_bundle' => false,
+                        'type' => 'xml',
+                        'dir' => '%kernel.project_dir%/config/doctrine',
+                        'prefix' => 'Marac\SyliusHeadlessOAuthBundle\Entity',
+                        'alias' => 'OAuth',
                     ],
                 ],
             ],

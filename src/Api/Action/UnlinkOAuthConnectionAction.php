@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Marac\SyliusHeadlessOAuthBundle\Api\Action;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
-use Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface;
+use Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface;
+use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Attribute\AsController;
  * API action to unlink an OAuth provider from the current user's account.
  *
  * Allows users to disconnect OAuth providers from their account.
- * The provider ID field will be set to null.
+ * The OAuthIdentity record will be removed.
  *
  * Usage:
  *   DELETE /api/v2/auth/oauth/connections/{provider}
@@ -40,7 +40,7 @@ final class UnlinkOAuthConnectionAction
     public function __construct(
         private readonly Security $security,
         private readonly EntityManagerInterface $entityManager,
-        private readonly ProviderFieldMapperInterface $fieldMapper,
+        private readonly OAuthIdentityRepositoryInterface $oauthIdentityRepository,
     ) {
     }
 
@@ -57,17 +57,17 @@ final class UnlinkOAuthConnectionAction
 
         $customer = $user->getCustomer();
 
-        if (!$customer instanceof OAuthIdentityInterface) {
+        if (!$customer instanceof CustomerInterface) {
             return new JsonResponse([
                 'code' => Response::HTTP_BAD_REQUEST,
-                'message' => 'Customer does not support OAuth connections',
+                'message' => 'Customer not found',
             ], Response::HTTP_BAD_REQUEST);
         }
 
         $providerName = strtolower($provider);
-        $currentProviderId = $this->fieldMapper->getProviderId($customer, $providerName);
+        $oauthIdentity = $this->oauthIdentityRepository->findByCustomerAndProvider($customer, $providerName);
 
-        if ($currentProviderId === null) {
+        if ($oauthIdentity === null) {
             return new JsonResponse([
                 'code' => Response::HTTP_BAD_REQUEST,
                 'message' => 'Provider is not connected to this account',
@@ -82,8 +82,8 @@ final class UnlinkOAuthConnectionAction
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        // Unlink the provider
-        $this->fieldMapper->setProviderId($customer, $providerName, null);
+        // Remove the OAuth identity
+        $this->entityManager->remove($oauthIdentity);
         $this->entityManager->flush();
 
         return new JsonResponse([
@@ -100,7 +100,7 @@ final class UnlinkOAuthConnectionAction
      * - User has at least one other OAuth provider connected
      */
     private function canUnlinkSafely(
-        OAuthIdentityInterface $customer,
+        CustomerInterface $customer,
         string $providerToRemove,
         ShopUserInterface $user,
     ): bool {
@@ -110,20 +110,7 @@ final class UnlinkOAuthConnectionAction
             return true;
         }
 
-        // Check for other connected providers
-        $providers = $this->fieldMapper->getBuiltInProviders();
-
-        foreach ($providers as $provider) {
-            if ($provider === $providerToRemove) {
-                continue;
-            }
-
-            $providerId = $this->fieldMapper->getProviderId($customer, $provider);
-            if ($providerId !== null) {
-                return true;
-            }
-        }
-
-        return false;
+        // Check for other connected providers using the repository
+        return $this->oauthIdentityRepository->hasOtherProviders($customer, $providerToRemove);
     }
 }

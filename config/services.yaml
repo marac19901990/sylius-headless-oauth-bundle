@@ -10,12 +10,14 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface:
         alias: Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator
 
-    # Provider Field Mapper
-    Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper: ~
+    # OAuth Identity Repository
+    Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepository:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
 
-    # Interface alias for ProviderFieldMapper
-    Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface:
-        alias: Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapper
+    # Interface alias for OAuthIdentityRepository
+    Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface:
+        alias: Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepository
 
     # HTTP Client for OAuth requests
     Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient:
@@ -142,7 +144,7 @@ services:
             $customerFactory: '@sylius.factory.customer'
             $shopUserFactory: '@sylius.factory.shop_user'
             $entityManager: '@doctrine.orm.entity_manager'
-            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface'
+            $oauthIdentityRepository: '@Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface'
             $clock: '@Psr\Clock\ClockInterface'
             $eventDispatcher: '@event_dispatcher'
 
@@ -205,12 +207,13 @@ services:
             $projectDir: '%kernel.project_dir%'
             $filesystem: '@Symfony\Component\Filesystem\Filesystem'
             $parameterBag: '@Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface'
-            $entityManager: '@doctrine.orm.entity_manager'
         tags:
             - { name: 'console.command' }
 
     # Twig Extension for OAuth Provider Display
     Marac\SyliusHeadlessOAuthBundle\Twig\OAuthExtension:
+        arguments:
+            $oauthIdentityRepository: '@Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface'
         tags:
             - { name: 'twig.extension' }
 
@@ -234,11 +237,11 @@ services:
         arguments:
             $security: '@security.helper'
             $providers: !tagged_iterator 'sylius_headless_oauth.provider'
-            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface'
+            $oauthIdentityRepository: '@Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface'
 
     # Unlink OAuth Connection Action (API)
     Marac\SyliusHeadlessOAuthBundle\Api\Action\UnlinkOAuthConnectionAction:
         arguments:
             $security: '@security.helper'
             $entityManager: '@doctrine.orm.entity_manager'
-            $fieldMapper: '@Marac\SyliusHeadlessOAuthBundle\Provider\ProviderFieldMapperInterface'
+            $oauthIdentityRepository: '@Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface'

@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Command;
 
-use Doctrine\ORM\EntityManagerInterface;
-use Exception;
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthCheckerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthStatus;
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
-use Sylius\Component\Customer\Model\CustomerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -21,7 +17,6 @@ use Symfony\Component\Filesystem\Filesystem;
 
 use function dirname;
 use function extension_loaded;
-use function is_string;
 use function sprintf;
 
 use const PHP_VERSION;
@@ -40,8 +35,8 @@ final class InstallCommand extends Command
         private readonly ProviderHealthCheckerInterface $healthChecker,
         private readonly string $projectDir,
         private readonly Filesystem $filesystem,
+        /** @phpstan-ignore property.onlyWritten */
         private readonly ParameterBagInterface $parameterBag,
-        private readonly EntityManagerInterface $entityManager,
     ) {
         parent::__construct();
     }
@@ -57,11 +52,10 @@ final class InstallCommand extends Command
                 It performs the following steps:
                   1. Checks PHP requirements (version and extensions)
                   2. Scaffolds the configuration file
-                  3. Provides entity setup instructions
-                  4. Shows database migration commands
-                  5. Validates environment variables
-                  6. Checks provider health
-                  7. Displays next steps checklist
+                  3. Shows database migration commands
+                  4. Validates environment variables
+                  5. Checks provider health
+                  6. Displays next steps checklist
 
                 <info>php %command.full_name%</info>
 
@@ -96,19 +90,16 @@ final class InstallCommand extends Command
             $io->note('Skipping configuration scaffolding (--skip-config)');
         }
 
-        // Step 3: Entity Setup Instructions
-        $this->showEntitySetupInstructions($io);
-
-        // Step 4: Database Migration Instructions
+        // Step 3: Database Migration Instructions
         $this->showMigrationInstructions($io);
 
-        // Step 5: Environment Variables Check
+        // Step 4: Environment Variables Check
         $this->checkEnvironmentVariables($io);
 
-        // Step 6: Provider Health Check
+        // Step 5: Provider Health Check
         $this->checkProviderHealth($io);
 
-        // Step 7: Next Steps Checklist
+        // Step 6: Next Steps Checklist
         $this->showNextSteps($io);
 
         $io->success('Installation wizard completed!');
@@ -197,43 +188,16 @@ final class InstallCommand extends Command
         $io->text('Review and customize the configuration file for your needs.');
     }
 
-    private function showEntitySetupInstructions(SymfonyStyle $io): void
-    {
-        $io->section('Step 3: Entity Setup');
-
-        $io->text([
-            'Your Customer entity must implement the OAuthIdentityInterface.',
-            'Add the following to your <info>src/Entity/Customer/Customer.php</info>:',
-        ]);
-
-        $io->newLine();
-        $io->writeln('<fg=cyan>use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;</>');
-        $io->writeln('<fg=cyan>use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityTrait;</>');
-        $io->newLine();
-        $io->writeln('<fg=cyan>class Customer extends BaseCustomer implements OAuthIdentityInterface</>');
-        $io->writeln('<fg=cyan>{</>');
-        $io->writeln('<fg=cyan>    use OAuthIdentityTrait;</>');
-        $io->writeln('<fg=cyan>}</>');
-        $io->newLine();
-
-        // Try to detect if Customer already implements the interface
-        $customerClass = $this->getCustomerClass();
-        if ($customerClass !== null && class_exists($customerClass)) {
-            if (is_subclass_of($customerClass, OAuthIdentityInterface::class)) {
-                $io->success('Customer entity already implements OAuthIdentityInterface');
-            } else {
-                $io->warning('Customer entity does not yet implement OAuthIdentityInterface');
-            }
-        } else {
-            $io->note('Could not auto-detect Customer entity. Ensure it implements OAuthIdentityInterface.');
-        }
-    }
-
     private function showMigrationInstructions(SymfonyStyle $io): void
     {
-        $io->section('Step 4: Database Migration');
+        $io->section('Step 3: Database Migration');
 
-        $io->text('After modifying your Customer entity, run the following commands:');
+        $io->text([
+            'The bundle uses a separate table (<info>sylius_oauth_identity</info>) to store OAuth connections.',
+            'This means you don\'t need to modify your Customer entity!',
+            '',
+            'Run the following commands to create the table:',
+        ]);
         $io->newLine();
 
         $io->listing([
@@ -241,18 +205,19 @@ final class InstallCommand extends Command
             '<info>bin/console doctrine:migrations:migrate</info> - Apply migration',
         ]);
 
-        $io->note('This will add OAuth identity columns (google_id, apple_id, facebook_id, oidc_id) to your customer table.');
+        $io->note('The migration will create the sylius_oauth_identity table with provider and identifier columns.');
     }
 
     private function checkEnvironmentVariables(SymfonyStyle $io): void
     {
-        $io->section('Step 5: Environment Variables');
+        $io->section('Step 4: Environment Variables');
 
         $envVars = [
             'Google' => ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
             'Apple' => ['APPLE_CLIENT_ID', 'APPLE_TEAM_ID', 'APPLE_KEY_ID', 'APPLE_PRIVATE_KEY_PATH'],
             'Facebook' => ['FACEBOOK_CLIENT_ID', 'FACEBOOK_CLIENT_SECRET'],
             'GitHub' => ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'],
+            'LinkedIn' => ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'],
         ];
 
         $rows = [];
@@ -286,7 +251,7 @@ final class InstallCommand extends Command
 
     private function checkProviderHealth(SymfonyStyle $io): void
     {
-        $io->section('Step 6: Provider Health Check');
+        $io->section('Step 5: Provider Health Check');
 
         $statuses = $this->healthChecker->checkAll();
 
@@ -338,12 +303,11 @@ final class InstallCommand extends Command
 
     private function showNextSteps(SymfonyStyle $io): void
     {
-        $io->section('Step 7: Next Steps Checklist');
+        $io->section('Step 6: Next Steps Checklist');
 
         $io->listing([
             'Review and customize <info>config/packages/sylius_headless_oauth.yaml</info>',
-            'Add OAuthIdentityTrait to your Customer entity',
-            'Run database migrations',
+            'Run database migrations to create the <info>sylius_oauth_identity</info> table',
             'Set up environment variables for your OAuth providers',
             'Configure allowed redirect URIs for your frontend applications',
             'Test OAuth flow: <info>POST /api/v2/auth/oauth/{provider}</info>',
@@ -374,36 +338,5 @@ final class InstallCommand extends Command
         $value = getenv($name);
 
         return $value !== false && $value !== '' ? $value : false;
-    }
-
-    /**
-     * Gets the configured Sylius customer class.
-     *
-     * Strategy:
-     * 1. Try Sylius parameter (fastest)
-     * 2. Ask Doctrine for CustomerInterface implementor (most robust)
-     * 3. Return null - no hardcoded guessing
-     */
-    private function getCustomerClass(): ?string
-    {
-        // 1. Try the standard Sylius parameter
-        if ($this->parameterBag->has('sylius.model.customer.class')) {
-            $class = $this->parameterBag->get('sylius.model.customer.class');
-            if (is_string($class) && class_exists($class)) {
-                return $class;
-            }
-        }
-
-        // 2. Ask Doctrine: "Who implements CustomerInterface?"
-        try {
-            $metadata = $this->entityManager->getClassMetadata(CustomerInterface::class);
-
-            return $metadata->getName();
-        } catch (Exception) {
-            // Interface isn't mapped yet - expected during initial setup
-        }
-
-        // 3. Return null - let caller decide how to handle
-        return null;
     }
 }

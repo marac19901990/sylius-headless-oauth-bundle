@@ -323,36 +323,41 @@ Ensure these packages are installed:
 
 ## Database Issues
 
-### Missing OAuth columns
+### Missing sylius_oauth_identity table
 
-**Symptom:** `Unknown column 'google_id' in 'field list'`
+**Symptom:** `Table 'sylius_oauth_identity' doesn't exist`
 
 **Solution:**
-1. Ensure Customer entity uses the trait:
-   ```php
-   use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityTrait;
-
-   class Customer extends BaseCustomer implements OAuthIdentityInterface
-   {
-       use OAuthIdentityTrait;
-   }
-   ```
-
-2. Generate and run migration:
+1. Generate and run the migration:
    ```bash
    bin/console doctrine:migrations:diff
    bin/console doctrine:migrations:migrate
    ```
 
+2. Verify the table was created:
+   ```bash
+   bin/console doctrine:schema:validate
+   ```
+
 ### Duplicate entry error
 
-**Symptom:** `Duplicate entry 'xxx' for key 'google_id'`
+**Symptom:** `Duplicate entry 'xxx' for key 'unique_provider_identifier'`
 
 **Cause:** Same OAuth ID trying to link to different customers.
 
 **Solution:**
 - This is expected behavior - each OAuth ID can only link to one customer
 - If a user needs to change their linked account, unlink the old one first
+
+### Duplicate customer_provider error
+
+**Symptom:** `Duplicate entry 'xxx-yyy' for key 'unique_customer_provider'`
+
+**Cause:** Trying to link the same provider twice to a customer.
+
+**Solution:**
+- Each customer can only have one connection per provider
+- Check if the connection already exists before attempting to link
 
 ---
 

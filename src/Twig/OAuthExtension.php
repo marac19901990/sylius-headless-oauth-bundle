@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Twig;
 
-use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
+use DateTimeInterface;
+use Marac\SyliusHeadlessOAuthBundle\Repository\OAuthIdentityRepositoryInterface;
+use Sylius\Component\Core\Model\CustomerInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -17,27 +19,38 @@ final class OAuthExtension extends AbstractExtension
             'name' => 'Google',
             'icon' => 'google',
             'color' => '#4285F4',
-            'getter' => 'getGoogleId',
         ],
         'apple' => [
             'name' => 'Apple',
             'icon' => 'apple',
             'color' => '#000000',
-            'getter' => 'getAppleId',
         ],
         'facebook' => [
             'name' => 'Facebook',
             'icon' => 'facebook',
             'color' => '#1877F2',
-            'getter' => 'getFacebookId',
+        ],
+        'github' => [
+            'name' => 'GitHub',
+            'icon' => 'github',
+            'color' => '#333333',
+        ],
+        'linkedin' => [
+            'name' => 'LinkedIn',
+            'icon' => 'linkedin',
+            'color' => '#0A66C2',
         ],
         'oidc' => [
             'name' => 'OIDC',
             'icon' => 'openid',
             'color' => '#F78C40',
-            'getter' => 'getOidcId',
         ],
     ];
+
+    public function __construct(
+        private readonly OAuthIdentityRepositoryInterface $oauthIdentityRepository,
+    ) {
+    }
 
     public function getFunctions(): array
     {
@@ -54,7 +67,7 @@ final class OAuthExtension extends AbstractExtension
      */
     public function hasConnectedProviders(mixed $customer): bool
     {
-        if (!$customer instanceof OAuthIdentityInterface) {
+        if (!$customer instanceof CustomerInterface) {
             return false;
         }
 
@@ -64,28 +77,34 @@ final class OAuthExtension extends AbstractExtension
     /**
      * Get list of connected OAuth providers for a customer.
      *
-     * @return array<string, array{name: string, icon: string, color: string, id: string}>
+     * @return array<string, array{name: string, icon: string, color: string, identifier: string, connectedAt: string|null}>
      */
     public function getConnectedProviders(mixed $customer): array
     {
-        if (!$customer instanceof OAuthIdentityInterface) {
+        if (!$customer instanceof CustomerInterface) {
             return [];
         }
 
+        $identities = $this->oauthIdentityRepository->findAllByCustomer($customer);
         $connected = [];
 
-        foreach (self::PROVIDER_CONFIG as $key => $config) {
-            $getter = $config['getter'];
-            $providerId = $customer->$getter();
+        foreach ($identities as $identity) {
+            $provider = $identity->getProvider();
+            $config = self::PROVIDER_CONFIG[$provider] ?? [
+                'name' => ucfirst($provider),
+                'icon' => 'key',
+                'color' => '#666666',
+            ];
 
-            if ($providerId !== null && $providerId !== '') {
-                $connected[$key] = [
-                    'name' => $config['name'],
-                    'icon' => $config['icon'],
-                    'color' => $config['color'],
-                    'id' => $providerId,
-                ];
-            }
+            $connectedAt = $identity->getConnectedAt();
+
+            $connected[$provider] = [
+                'name' => $config['name'],
+                'icon' => $config['icon'],
+                'color' => $config['color'],
+                'identifier' => $identity->getIdentifier(),
+                'connectedAt' => $connectedAt?->format(DateTimeInterface::ATOM),
+            ];
         }
 
         return $connected;
@@ -94,7 +113,7 @@ final class OAuthExtension extends AbstractExtension
     /**
      * Get configuration for a specific provider.
      *
-     * @return array{name: string, icon: string, color: string, getter: string}|null
+     * @return array{name: string, icon: string, color: string}|null
      */
     public function getProviderConfig(string $provider): ?array
     {
@@ -104,7 +123,7 @@ final class OAuthExtension extends AbstractExtension
     /**
      * Get all supported providers configuration.
      *
-     * @return array<string, array{name: string, icon: string, color: string, getter: string}>
+     * @return array<string, array{name: string, icon: string, color: string}>
      */
     public function getAllProviders(): array
     {
