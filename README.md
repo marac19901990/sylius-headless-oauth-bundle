@@ -1,5 +1,11 @@
 # SyliusHeadlessOAuthBundle
 
+[![CI](https://github.com/marac19901990/sylius-headless-oauth-bundle/workflows/CI/badge.svg)](https://github.com/marac19901990/sylius-headless-oauth-bundle/actions)
+[![codecov](https://codecov.io/gh/marac19901990/sylius-headless-oauth-bundle/branch/master/graph/badge.svg)](https://codecov.io/gh/marac19901990/sylius-headless-oauth-bundle)
+[![Latest Stable Version](https://poser.pugx.org/marac19901990/sylius-headless-oauth-bundle/v/stable)](https://packagist.org/packages/marac19901990/sylius-headless-oauth-bundle)
+[![Total Downloads](https://poser.pugx.org/marac19901990/sylius-headless-oauth-bundle/downloads)](https://packagist.org/packages/marac19901990/sylius-headless-oauth-bundle)
+[![License](https://poser.pugx.org/marac19901990/sylius-headless-oauth-bundle/license)](https://packagist.org/packages/marac19901990/sylius-headless-oauth-bundle)
+
 A Symfony bundle that provides headless OAuth authentication for Sylius e-commerce platform via API Platform. Supports Google, Apple, Facebook Sign-In, and any OpenID Connect provider (Keycloak, Auth0, Okta, Azure AD, etc.) out of the box.
 
 ## Features
