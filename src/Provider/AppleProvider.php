@@ -39,8 +39,8 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
         private readonly CredentialValidatorInterface $credentialValidator,
         private readonly string $clientId,
         private readonly OAuthSecurityLoggerInterface $securityLogger,
+        private readonly AppleJwksVerifierInterface $jwksVerifier,
         private readonly bool $enabled = true,
-        private readonly ?AppleJwksVerifierInterface $jwksVerifier = null,
         private readonly bool $verifyJwt = true,
     ) {
         if ($this->enabled) {
@@ -221,29 +221,26 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
      *
      * When verification is enabled (default), validates the JWT signature
      * against Apple's JWKS and checks standard claims (iss, aud, exp).
+     * When disabled, uses the NullAppleJwksVerifier which decodes without verification.
      *
      * @return array{sub: string, email: string, email_verified?: bool, firstName?: string, lastName?: string}
      */
     private function decodeIdToken(string $idToken): array
     {
-        // If verification is enabled and we have a verifier, use it
-        if ($this->verifyJwt && $this->jwksVerifier !== null) {
-            try {
-                return $this->jwksVerifier->verify($idToken);
-            } catch (OAuthException $e) {
-                // Log the verification failure
-                $this->securityLogger->logJwtVerificationFailure(
-                    self::PROVIDER_NAME,
-                    $e->getMessage(),
-                );
-
-                throw $e;
-            }
+        if (!$this->verifyJwt) {
+            return $this->decodeIdTokenWithoutVerification($idToken);
         }
 
-        // Fallback: decode without verification (for testing or when verifier unavailable)
-        // In production with verify_apple_jwt: true, this path should not be reached
-        return $this->decodeIdTokenWithoutVerification($idToken);
+        try {
+            return $this->jwksVerifier->verify($idToken);
+        } catch (OAuthException $e) {
+            $this->securityLogger->logJwtVerificationFailure(
+                self::PROVIDER_NAME,
+                $e->getMessage(),
+            );
+
+            throw $e;
+        }
     }
 
     /**

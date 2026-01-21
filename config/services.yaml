@@ -39,6 +39,12 @@ services:
     # Null Object implementations for optional dependencies
     Marac\SyliusHeadlessOAuthBundle\Security\NullOAuthSecurityLogger: ~
     Marac\SyliusHeadlessOAuthBundle\Security\NullRedirectUriValidator: ~
+    Marac\SyliusHeadlessOAuthBundle\Security\NullCacheItemPool: ~
+    Marac\SyliusHeadlessOAuthBundle\Security\NullAppleJwksVerifier: ~
+
+    # Internal cache service alias (overridden in Extension when cache.app is available)
+    sylius_headless_oauth.cache:
+        alias: Marac\SyliusHeadlessOAuthBundle\Security\NullCacheItemPool
 
     # Security: OAuth Security Logger
     Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLogger:
@@ -90,8 +96,8 @@ services:
             $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface'
             $clientId: '%sylius_headless_oauth.providers.apple.client_id%'
             $securityLogger: '@Marac\SyliusHeadlessOAuthBundle\Security\OAuthSecurityLoggerInterface'
-            $enabled: '%sylius_headless_oauth.providers.apple.enabled%'
             $jwksVerifier: '@Marac\SyliusHeadlessOAuthBundle\Security\AppleJwksVerifierInterface'
+            $enabled: '%sylius_headless_oauth.providers.apple.enabled%'
             $verifyJwt: '%sylius_headless_oauth.security.verify_apple_jwt%'
         tags:
             - { name: 'sylius_headless_oauth.provider' }
@@ -201,7 +207,7 @@ services:
     Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryService:
         arguments:
             $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
-            $cache: '@?cache.app'
+            $cache: '@sylius_headless_oauth.cache'
 
     # OIDC Discovery Service Interface alias
     Marac\SyliusHeadlessOAuthBundle\Service\OidcDiscoveryServiceInterface:

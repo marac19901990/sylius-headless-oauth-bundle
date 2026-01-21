@@ -11,6 +11,7 @@ use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInt
 use Marac\SyliusHeadlessOAuthBundle\Provider\AppleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthTokenData;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
+use Marac\SyliusHeadlessOAuthBundle\Security\NullAppleJwksVerifier;
 use Marac\SyliusHeadlessOAuthBundle\Security\NullOAuthSecurityLogger;
 use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -38,6 +39,7 @@ class AppleProviderRefreshTest extends TestCase
             credentialValidator: $this->credentialValidator,
             clientId: 'com.example.app',
             securityLogger: new NullOAuthSecurityLogger(),
+            jwksVerifier: new NullAppleJwksVerifier(),
             enabled: true,
         );
     }
@@ -188,6 +190,7 @@ class AppleProviderRefreshTest extends TestCase
             credentialValidator: $this->credentialValidator,
             clientId: '%env(APPLE_CLIENT_ID)%',
             securityLogger: new NullOAuthSecurityLogger(),
+            jwksVerifier: new NullAppleJwksVerifier(),
             enabled: false, // Disabled to avoid validation
         );
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle;
 
+use Marac\SyliusHeadlessOAuthBundle\DependencyInjection\Compiler\CacheCompilerPass;
 use Marac\SyliusHeadlessOAuthBundle\DependencyInjection\Compiler\LoggerCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -22,5 +23,6 @@ final class SyliusHeadlessOAuthBundle extends Bundle
         parent::build($container);
 
         $container->addCompilerPass(new LoggerCompilerPass());
+        $container->addCompilerPass(new CacheCompilerPass());
     }
 }

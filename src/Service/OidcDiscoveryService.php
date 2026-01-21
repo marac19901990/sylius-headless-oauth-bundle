@@ -25,7 +25,7 @@ final class OidcDiscoveryService implements OidcDiscoveryServiceInterface
 
     public function __construct(
         private readonly ClientInterface $httpClient,
-        private readonly ?CacheItemPoolInterface $cache = null,
+        private readonly CacheItemPoolInterface $cache,
     ) {
     }
 
@@ -52,26 +52,20 @@ final class OidcDiscoveryService implements OidcDiscoveryServiceInterface
     public function discover(string $issuerUrl): array
     {
         $cacheKey = $this->getCacheKey($issuerUrl);
+        $cacheItem = $this->cache->getItem($cacheKey);
 
-        if ($this->cache !== null) {
-            $cacheItem = $this->cache->getItem($cacheKey);
+        if ($cacheItem->isHit()) {
+            /** @var array<string, mixed> $cached */
+            $cached = $cacheItem->get();
 
-            if ($cacheItem->isHit()) {
-                /** @var array<string, mixed> $cached */
-                $cached = $cacheItem->get();
-
-                return $cached;
-            }
+            return $cached;
         }
 
         $config = $this->fetchConfiguration($issuerUrl);
 
-        if ($this->cache !== null) {
-            $cacheItem = $this->cache->getItem($cacheKey);
-            $cacheItem->set($config);
-            $cacheItem->expiresAfter(self::CACHE_TTL);
-            $this->cache->save($cacheItem);
-        }
+        $cacheItem->set($config);
+        $cacheItem->expiresAfter(self::CACHE_TTL);
+        $this->cache->save($cacheItem);
 
         return $config;
     }
@@ -122,10 +116,6 @@ final class OidcDiscoveryService implements OidcDiscoveryServiceInterface
      */
     public function clearCache(string $issuerUrl): void
     {
-        if ($this->cache === null) {
-            return;
-        }
-
         $this->cache->deleteItem($this->getCacheKey($issuerUrl));
     }
 
