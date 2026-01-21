@@ -204,47 +204,53 @@ class GoogleProviderTest extends TestCase
 
     public function testThrowsExceptionOnEmptyClientId(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('GOOGLE_CLIENT_ID is not configured');
-
-        new GoogleProvider(
+        $provider = new GoogleProvider(
             httpClient: $this->httpClient,
             credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: 'test-client-secret',
             enabled: true,
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('GOOGLE_CLIENT_ID is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
     public function testThrowsExceptionOnEmptyClientSecret(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('GOOGLE_CLIENT_SECRET is not configured');
-
-        new GoogleProvider(
+        $provider = new GoogleProvider(
             httpClient: $this->httpClient,
             credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: '',
             enabled: true,
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('GOOGLE_CLIENT_SECRET is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
     public function testThrowsExceptionOnUnresolvedEnvPlaceholder(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('GOOGLE_CLIENT_ID is not configured');
-
-        new GoogleProvider(
+        $provider = new GoogleProvider(
             httpClient: $this->httpClient,
             credentialValidator: $this->credentialValidator,
             clientId: '%env(GOOGLE_CLIENT_ID)%',
             clientSecret: 'test-client-secret',
             enabled: true,
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('GOOGLE_CLIENT_ID is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
-    public function testNoValidationWhenDisabled(): void
+    public function testProviderCanBeCreatedWithMissingCredentialsWhenDisabled(): void
     {
         $provider = new GoogleProvider(
             httpClient: $this->httpClient,

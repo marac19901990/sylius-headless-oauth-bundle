@@ -28,9 +28,6 @@ final class GoogleProvider implements ConfigurableOAuthProviderInterface, Refres
         private readonly string $clientSecret,
         private readonly bool $enabled = true,
     ) {
-        if ($this->enabled) {
-            $this->validateCredentials();
-        }
     }
 
     public function supports(string $provider): bool
@@ -63,6 +60,8 @@ final class GoogleProvider implements ConfigurableOAuthProviderInterface, Refres
 
     public function getUserData(string $code, string $redirectUri): OAuthUserData
     {
+        $this->validateCredentials();
+
         $tokens = $this->exchangeCodeForTokens($code, $redirectUri);
         $userInfo = $this->fetchUserInfo($tokens['access_token']);
 

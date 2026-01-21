@@ -264,10 +264,7 @@ class AppleProviderTest extends TestCase
 
     public function testThrowsExceptionOnEmptyClientId(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
-
-        new AppleProvider(
+        $provider = new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
             credentialValidator: $this->credentialValidator,
@@ -276,14 +273,16 @@ class AppleProviderTest extends TestCase
             jwksVerifier: new NullAppleJwksVerifier(),
             enabled: true,
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
     public function testThrowsExceptionOnUnresolvedEnvPlaceholder(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
-
-        new AppleProvider(
+        $provider = new AppleProvider(
             httpClient: $this->httpClient,
             clientSecretGenerator: $this->clientSecretGenerator,
             credentialValidator: $this->credentialValidator,
@@ -292,9 +291,14 @@ class AppleProviderTest extends TestCase
             jwksVerifier: new NullAppleJwksVerifier(),
             enabled: true,
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
-    public function testNoValidationWhenDisabled(): void
+    public function testProviderCanBeCreatedWithMissingCredentialsWhenDisabled(): void
     {
         $provider = new AppleProvider(
             httpClient: $this->httpClient,

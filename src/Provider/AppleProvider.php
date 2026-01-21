@@ -43,9 +43,6 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
         private readonly bool $enabled = true,
         private readonly bool $verifyJwt = true,
     ) {
-        if ($this->enabled) {
-            $this->validateCredentials();
-        }
     }
 
     public function supports(string $provider): bool
@@ -77,6 +74,8 @@ final class AppleProvider implements ConfigurableOAuthProviderInterface, Refresh
 
     public function getUserData(string $code, string $redirectUri): OAuthUserData
     {
+        $this->validateCredentials();
+
         $tokens = $this->exchangeCodeForTokens($code, $redirectUri);
         $idTokenData = $this->decodeIdToken($tokens['id_token']);
 

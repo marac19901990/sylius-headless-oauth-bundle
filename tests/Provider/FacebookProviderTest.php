@@ -206,47 +206,53 @@ class FacebookProviderTest extends TestCase
 
     public function testThrowsExceptionOnEmptyClientId(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('FACEBOOK_CLIENT_ID is not configured');
-
-        new FacebookProvider(
+        $provider = new FacebookProvider(
             httpClient: $this->httpClient,
             credentialValidator: $this->credentialValidator,
             clientId: '',
             clientSecret: 'test-client-secret',
             enabled: true,
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('FACEBOOK_CLIENT_ID is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
     public function testThrowsExceptionOnEmptyClientSecret(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('FACEBOOK_CLIENT_SECRET is not configured');
-
-        new FacebookProvider(
+        $provider = new FacebookProvider(
             httpClient: $this->httpClient,
             credentialValidator: $this->credentialValidator,
             clientId: 'test-client-id',
             clientSecret: '',
             enabled: true,
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('FACEBOOK_CLIENT_SECRET is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
     public function testThrowsExceptionOnUnresolvedEnvPlaceholder(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('FACEBOOK_CLIENT_ID is not configured');
-
-        new FacebookProvider(
+        $provider = new FacebookProvider(
             httpClient: $this->httpClient,
             credentialValidator: $this->credentialValidator,
             clientId: '%env(FACEBOOK_CLIENT_ID)%',
             clientSecret: 'test-client-secret',
             enabled: true,
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('FACEBOOK_CLIENT_ID is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
-    public function testNoValidationWhenDisabled(): void
+    public function testProviderCanBeCreatedWithMissingCredentialsWhenDisabled(): void
     {
         $provider = new FacebookProvider(
             httpClient: $this->httpClient,
