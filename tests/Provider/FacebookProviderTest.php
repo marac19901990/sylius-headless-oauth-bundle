@@ -6,7 +6,6 @@ namespace Marac\SyliusHeadlessOAuthBundle\Tests\Provider;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
-use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\FacebookProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
@@ -214,7 +213,7 @@ class FacebookProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('FACEBOOK_CLIENT_ID is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');
@@ -230,7 +229,7 @@ class FacebookProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('FACEBOOK_CLIENT_SECRET is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');
@@ -246,7 +245,7 @@ class FacebookProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('FACEBOOK_CLIENT_ID is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');

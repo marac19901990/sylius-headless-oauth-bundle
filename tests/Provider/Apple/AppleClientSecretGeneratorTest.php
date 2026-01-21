@@ -6,7 +6,6 @@ namespace Marac\SyliusHeadlessOAuthBundle\Tests\Provider\Apple;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGenerator;
 use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
@@ -205,72 +204,82 @@ class AppleClientSecretGeneratorTest extends TestCase
 
     public function testThrowsExceptionOnEmptyClientId(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
 
-        new AppleClientSecretGenerator(
+        $generator = new AppleClientSecretGenerator(
             credentialValidator: $this->credentialValidator,
             clientId: '',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
             privateKeyPath: $this->testKeyPath,
         );
+
+        $generator->generate();
     }
 
     public function testThrowsExceptionOnEmptyTeamId(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('APPLE_TEAM_ID is not configured');
 
-        new AppleClientSecretGenerator(
+        $generator = new AppleClientSecretGenerator(
             credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: '',
             keyId: 'KEY123456',
             privateKeyPath: $this->testKeyPath,
         );
+
+        $generator->generate();
     }
 
     public function testThrowsExceptionOnEmptyKeyId(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('APPLE_KEY_ID is not configured');
 
-        new AppleClientSecretGenerator(
+        $generator = new AppleClientSecretGenerator(
             credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: '',
             privateKeyPath: $this->testKeyPath,
         );
+
+        $generator->generate();
     }
 
     public function testThrowsExceptionOnEmptyPrivateKeyPath(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('APPLE_PRIVATE_KEY_PATH is not configured');
 
-        new AppleClientSecretGenerator(
+        $generator = new AppleClientSecretGenerator(
             credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: 'TEAM123456',
             keyId: 'KEY123456',
             privateKeyPath: '',
         );
+
+        $generator->generate();
     }
 
     public function testThrowsExceptionOnUnresolvedEnvPlaceholder(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('APPLE_TEAM_ID is not configured');
 
-        new AppleClientSecretGenerator(
+        $generator = new AppleClientSecretGenerator(
             credentialValidator: $this->credentialValidator,
             clientId: 'com.test.app',
             teamId: '%env(APPLE_TEAM_ID)%',
             keyId: 'KEY123456',
             privateKeyPath: $this->testKeyPath,
         );
+
+        $generator->generate();
     }
 
     private function base64UrlDecode(string $data): string

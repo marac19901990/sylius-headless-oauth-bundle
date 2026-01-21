@@ -8,7 +8,6 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\GitHubProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
@@ -312,7 +311,7 @@ class GitHubProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('GITHUB_CLIENT_ID is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');
@@ -328,7 +327,7 @@ class GitHubProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('GITHUB_CLIENT_SECRET is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');
@@ -344,7 +343,7 @@ class GitHubProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('GITHUB_CLIENT_ID is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');

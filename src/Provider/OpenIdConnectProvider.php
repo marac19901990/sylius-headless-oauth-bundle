@@ -40,6 +40,8 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
 {
     private const PROVIDER_NAME = 'oidc';
 
+    private bool $credentialsValidated = false;
+
     public function __construct(
         private readonly ClientInterface $httpClient,
         private readonly OidcDiscoveryServiceInterface $discoveryService,
@@ -52,9 +54,6 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
         private readonly string $providerName = self::PROVIDER_NAME,
         private readonly string $scopes = 'openid email profile',
     ) {
-        if ($this->enabled) {
-            $this->validateCredentials();
-        }
     }
 
     public function supports(string $provider): bool
@@ -88,6 +87,8 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
 
     public function getUserData(string $code, string $redirectUri): OAuthUserData
     {
+        $this->ensureCredentialsValid();
+
         $tokens = $this->exchangeCodeForTokens($code, $redirectUri);
         $userData = $this->extractUserDataFromTokens($tokens);
 
@@ -101,6 +102,8 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
 
     public function getUserDataFromAccessToken(string $accessToken): OAuthUserData
     {
+        $this->ensureCredentialsValid();
+
         $userInfo = $this->fetchUserInfo($accessToken);
 
         return $this->createUserDataFromUserInfo($userInfo);
@@ -108,6 +111,8 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
 
     public function getUserDataFromTokenData(OAuthTokenData $tokenData): OAuthUserData
     {
+        $this->ensureCredentialsValid();
+
         // Try to get user data from id_token first, fall back to userinfo endpoint
         if ($tokenData->idToken !== null) {
             try {
@@ -136,6 +141,8 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
 
     public function refreshTokens(string $refreshToken): OAuthTokenData
     {
+        $this->ensureCredentialsValid();
+
         $tokenEndpoint = $this->discoveryService->getTokenEndpoint($this->issuerUrl);
 
         try {
@@ -186,8 +193,12 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
         return $this->scopes;
     }
 
-    private function validateCredentials(): void
+    private function ensureCredentialsValid(): void
     {
+        if ($this->credentialsValidated) {
+            return;
+        }
+
         if (empty($this->issuerUrl) || str_starts_with($this->issuerUrl, '%env(')) {
             throw new OAuthException(sprintf(
                 'OIDC provider "%s" issuer URL is not configured. Set the issuer_url parameter.',
@@ -199,6 +210,8 @@ final class OpenIdConnectProvider implements ConfigurableOAuthProviderInterface,
             ['value' => $this->clientId, 'env' => 'OIDC_CLIENT_ID', 'name' => 'client ID'],
             ['value' => $this->clientSecret, 'env' => 'OIDC_CLIENT_SECRET', 'name' => 'client secret'],
         ], 'OIDC (' . $this->providerName . ')');
+
+        $this->credentialsValidated = true;
     }
 
     /**

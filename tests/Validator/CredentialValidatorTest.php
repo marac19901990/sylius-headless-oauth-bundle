@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Tests\Validator;
 
-use InvalidArgumentException;
+use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -46,7 +46,7 @@ final class CredentialValidatorTest extends TestCase
     #[Test]
     public function emptyCredentialThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('Google OAuth is enabled but GOOGLE_CLIENT_ID is not configured');
 
         $this->validator->validate(
@@ -60,7 +60,7 @@ final class CredentialValidatorTest extends TestCase
     #[Test]
     public function placeholderCredentialThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('Apple OAuth is enabled but APPLE_CLIENT_ID is not configured');
         $this->expectExceptionMessage('sylius_headless_oauth.providers.apple.enabled: false');
 
@@ -86,7 +86,7 @@ final class CredentialValidatorTest extends TestCase
     #[Test]
     public function validateManyThrowsOnFirstInvalidCredential(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('GOOGLE_CLIENT_SECRET');
 
         $this->validator->validateMany([
@@ -99,7 +99,7 @@ final class CredentialValidatorTest extends TestCase
     #[DataProvider('invalidCredentialProvider')]
     public function invalidCredentialsThrowException(string $value, string $env): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
 
         $this->validator->validate($value, $env, 'Test', 'test credential');
     }
@@ -110,7 +110,7 @@ final class CredentialValidatorTest extends TestCase
         try {
             $this->validator->validate('', 'SOME_VAR', 'MyProvider', 'my credential');
             self::fail('Expected exception was not thrown');
-        } catch (InvalidArgumentException $e) {
+        } catch (OAuthException $e) {
             self::assertStringContainsString('MyProvider', $e->getMessage());
             self::assertStringContainsString('SOME_VAR', $e->getMessage());
             self::assertStringContainsString('myprovider', $e->getMessage()); // lowercase in config path

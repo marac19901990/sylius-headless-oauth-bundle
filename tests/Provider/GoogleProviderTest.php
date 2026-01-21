@@ -6,7 +6,6 @@ namespace Marac\SyliusHeadlessOAuthBundle\Tests\Provider;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
-use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\GoogleProvider;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Model\OAuthUserData;
@@ -212,7 +211,7 @@ class GoogleProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('GOOGLE_CLIENT_ID is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');
@@ -228,7 +227,7 @@ class GoogleProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('GOOGLE_CLIENT_SECRET is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');
@@ -244,7 +243,7 @@ class GoogleProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('GOOGLE_CLIENT_ID is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');

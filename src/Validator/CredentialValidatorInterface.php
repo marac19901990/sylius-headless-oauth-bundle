@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Validator;
 
-use InvalidArgumentException;
+use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 
 /**
  * Interface for OAuth provider credential validation.
@@ -22,7 +22,7 @@ interface CredentialValidatorInterface
      * @param string $providerName The provider name for error messages (e.g., 'Google', 'Apple')
      * @param string $credentialName Human-readable credential name (e.g., 'client ID', 'team ID')
      *
-     * @throws InvalidArgumentException If the credential is not configured
+     * @throws OAuthException If the credential is not configured
      */
     public function validate(
         string $value,
@@ -37,7 +37,7 @@ interface CredentialValidatorInterface
      * @param list<array{value: string, env: string, name: string}> $credentials
      * @param string $providerName The provider name for error messages
      *
-     * @throws InvalidArgumentException If any credential is not configured
+     * @throws OAuthException If any credential is not configured
      */
     public function validateMany(array $credentials, string $providerName): void;
 }

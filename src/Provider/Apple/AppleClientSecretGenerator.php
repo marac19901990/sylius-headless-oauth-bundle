@@ -23,6 +23,8 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
     private const APPLE_AUDIENCE = 'https://appleid.apple.com';
     private const MAX_EXPIRY_SECONDS = 15777000; // ~6 months
 
+    private bool $credentialsValidated = false;
+
     public function __construct(
         private readonly CredentialValidatorInterface $credentialValidator,
         private readonly string $clientId,
@@ -30,7 +32,6 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
         private readonly string $keyId,
         private readonly string $privateKeyPath,
     ) {
-        $this->validateCredentials();
     }
 
     /**
@@ -40,6 +41,7 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
      */
     public function generate(int $expirySeconds = 3600): string
     {
+        $this->ensureCredentialsValid();
         $privateKey = $this->loadPrivateKey();
         $now = time();
 
@@ -56,14 +58,20 @@ final class AppleClientSecretGenerator implements AppleClientSecretGeneratorInte
         return JWT::encode($payload, $privateKey, 'ES256', $this->keyId);
     }
 
-    private function validateCredentials(): void
+    private function ensureCredentialsValid(): void
     {
+        if ($this->credentialsValidated) {
+            return;
+        }
+
         $this->credentialValidator->validateMany([
             ['value' => $this->clientId, 'env' => 'APPLE_CLIENT_ID', 'name' => 'client ID'],
             ['value' => $this->teamId, 'env' => 'APPLE_TEAM_ID', 'name' => 'team ID'],
             ['value' => $this->keyId, 'env' => 'APPLE_KEY_ID', 'name' => 'key ID'],
             ['value' => $this->privateKeyPath, 'env' => 'APPLE_PRIVATE_KEY_PATH', 'name' => 'private key path'],
         ], 'Apple');
+
+        $this->credentialsValidated = true;
     }
 
     private function loadPrivateKey(): string

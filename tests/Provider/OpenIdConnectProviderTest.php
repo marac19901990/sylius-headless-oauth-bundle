@@ -550,10 +550,7 @@ class OpenIdConnectProviderTest extends TestCase
 
     public function testThrowsExceptionOnEmptyIssuerUrl(): void
     {
-        $this->expectException(OAuthException::class);
-        $this->expectExceptionMessage('issuer URL is not configured');
-
-        new OpenIdConnectProvider(
+        $provider = new OpenIdConnectProvider(
             httpClient: $this->httpClient,
             discoveryService: $this->discoveryService,
             credentialValidator: $this->credentialValidator,
@@ -562,14 +559,16 @@ class OpenIdConnectProviderTest extends TestCase
             issuerUrl: '',
             enabled: true,
         );
+
+        $this->expectException(OAuthException::class);
+        $this->expectExceptionMessage('issuer URL is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
     public function testThrowsExceptionOnUnresolvedEnvPlaceholder(): void
     {
-        $this->expectException(OAuthException::class);
-        $this->expectExceptionMessage('issuer URL is not configured');
-
-        new OpenIdConnectProvider(
+        $provider = new OpenIdConnectProvider(
             httpClient: $this->httpClient,
             discoveryService: $this->discoveryService,
             credentialValidator: $this->credentialValidator,
@@ -578,6 +577,11 @@ class OpenIdConnectProviderTest extends TestCase
             issuerUrl: '%env(KEYCLOAK_ISSUER_URL)%',
             enabled: true,
         );
+
+        $this->expectException(OAuthException::class);
+        $this->expectExceptionMessage('issuer URL is not configured');
+
+        $provider->getUserData('test-code', 'https://example.com/callback');
     }
 
     public function testNoValidationWhenDisabled(): void

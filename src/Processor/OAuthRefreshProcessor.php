@@ -47,6 +47,8 @@ final class OAuthRefreshProcessor implements ProcessorInterface
 
     /**
      * @param OAuthRefreshRequest $data
+     * @param array<string, string> $uriVariables
+     * @param array<string, mixed> $context
      */
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): OAuthResponse
     {

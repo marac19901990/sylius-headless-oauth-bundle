@@ -6,7 +6,6 @@ namespace Marac\SyliusHeadlessOAuthBundle\Tests\Provider;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
-use InvalidArgumentException;
 use Marac\SyliusHeadlessOAuthBundle\Exception\OAuthException;
 use Marac\SyliusHeadlessOAuthBundle\Provider\Apple\AppleClientSecretGeneratorInterface;
 use Marac\SyliusHeadlessOAuthBundle\Provider\AppleProvider;
@@ -274,7 +273,7 @@ class AppleProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');
@@ -292,7 +291,7 @@ class AppleProviderTest extends TestCase
             enabled: true,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('APPLE_CLIENT_ID is not configured');
 
         $provider->getUserData('test-code', 'https://example.com/callback');

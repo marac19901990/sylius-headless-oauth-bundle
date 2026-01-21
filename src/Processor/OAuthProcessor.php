@@ -48,6 +48,8 @@ final class OAuthProcessor implements ProcessorInterface
 
     /**
      * @param OAuthRequest $data
+     * @param array<string, string> $uriVariables
+     * @param array<string, mixed> $context
      */
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): OAuthResponse
     {

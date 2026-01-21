@@ -250,6 +250,12 @@ final class GitHubProvider implements ConfigurableOAuthProviderInterface, Refres
      * Fetch the primary verified email from GitHub.
      *
      * If the user has made their email private, we need to call the emails endpoint.
+     *
+     * Note: This method intentionally returns null on failure rather than throwing.
+     * The caller (getUserData/getUserDataFromAccessToken) handles null gracefully
+     * and throws a meaningful OAuthException if no email is ultimately available.
+     * This design allows the OAuth flow to continue attempting alternative email
+     * sources before failing with a user-friendly error message.
      */
     private function fetchPrimaryEmail(string $accessToken): ?string
     {
@@ -279,10 +285,11 @@ final class GitHubProvider implements ConfigurableOAuthProviderInterface, Refres
             }
 
             return null;
-        } catch (GuzzleException $e) {
-            // If we can't fetch emails, return null and let caller handle it
+        } catch (GuzzleException) {
+            // Intentionally silent: let caller handle missing email with a user-friendly error
             return null;
         } catch (JsonException) {
+            // Intentionally silent: let caller handle missing email with a user-friendly error
             return null;
         }
     }
