@@ -181,6 +181,11 @@ final class TestKernel extends Kernel
                     'client_id' => 'test_github_client_id',
                     'client_secret' => 'test_github_client_secret',
                 ],
+                'linkedin' => [
+                    'enabled' => true,
+                    'client_id' => 'test_linkedin_client_id',
+                    'client_secret' => 'test_linkedin_client_secret',
+                ],
             ],
         ]);
 

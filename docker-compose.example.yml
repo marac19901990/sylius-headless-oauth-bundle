@@ -1,0 +1,198 @@
+# Docker Compose Example for Sylius with Headless OAuth Bundle
+#
+# This is a minimal setup for local development and evaluation.
+#
+# QUICK START:
+# 1. Copy this file to your Sylius project root as docker-compose.yml
+# 2. Copy .env.example to .env and configure your OAuth credentials
+# 3. Run: docker compose up -d
+# 4. Install Sylius: docker compose exec php bin/console sylius:install
+# 5. Install OAuth bundle: docker compose exec php bin/console sylius:oauth:install
+#
+# The shop will be available at: http://localhost:8080
+# Admin panel: http://localhost:8080/admin
+
+services:
+  # PHP-FPM with Sylius
+  php:
+    image: sylius/standard:1.12-traditional
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: 1
+      DATABASE_URL: mysql://sylius:sylius@mysql:3306/sylius?serverVersion=8.0
+      MAILER_DSN: smtp://mailhog:1025
+
+      # OAuth Provider Configuration
+      # Set these in your .env file or uncomment and fill in here
+      # GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      # GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # APPLE_CLIENT_ID: ${APPLE_CLIENT_ID}
+      # APPLE_TEAM_ID: ${APPLE_TEAM_ID}
+      # APPLE_KEY_ID: ${APPLE_KEY_ID}
+      # APPLE_PRIVATE_KEY_PATH: /app/config/secrets/apple_auth_key.p8
+      # FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID}
+      # FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET}
+      # GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      # GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      # LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID}
+      # LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET}
+    volumes:
+      - .:/app:cached
+      - ./var:/app/var:delegated
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - sylius
+
+  # Nginx web server
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/app:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+    networks:
+      - sylius
+
+  # MySQL database
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sylius
+      MYSQL_USER: sylius
+      MYSQL_PASSWORD: sylius
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sylius
+
+  # Redis for caching (JWKS cache, sessions)
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    networks:
+      - sylius
+
+  # Mailhog for email testing
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP
+    networks:
+      - sylius
+
+  # Node.js for frontend assets (optional)
+  node:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - .:/app:cached
+    command: sh -c "yarn install && yarn watch"
+    profiles:
+      - frontend
+    networks:
+      - sylius
+
+networks:
+  sylius:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+
+# =============================================================================
+# NGINX CONFIGURATION
+# =============================================================================
+# Create this file at docker/nginx/default.conf:
+#
+# server {
+#     listen 80;
+#     server_name localhost;
+#     root /app/public;
+#
+#     location / {
+#         try_files $uri /index.php$is_args$args;
+#     }
+#
+#     location ~ ^/index\.php(/|$) {
+#         fastcgi_pass php:9000;
+#         fastcgi_split_path_info ^(.+\.php)(/.*)$;
+#         include fastcgi_params;
+#         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+#         fastcgi_param DOCUMENT_ROOT $document_root;
+#         internal;
+#     }
+#
+#     location ~ \.php$ {
+#         return 404;
+#     }
+# }
+# =============================================================================
+
+# =============================================================================
+# ENVIRONMENT VARIABLES (.env)
+# =============================================================================
+# Copy this to .env and configure:
+#
+# # Google OAuth (https://console.cloud.google.com/)
+# GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+# GOOGLE_CLIENT_SECRET=your-client-secret
+#
+# # Apple Sign-In (https://developer.apple.com/)
+# APPLE_CLIENT_ID=com.your.app.id
+# APPLE_TEAM_ID=XXXXXXXXXX
+# APPLE_KEY_ID=XXXXXXXXXX
+# APPLE_PRIVATE_KEY_PATH=/app/config/secrets/apple_auth_key.p8
+#
+# # Facebook Login (https://developers.facebook.com/)
+# FACEBOOK_CLIENT_ID=your-app-id
+# FACEBOOK_CLIENT_SECRET=your-app-secret
+#
+# # GitHub OAuth (https://github.com/settings/developers)
+# GITHUB_CLIENT_ID=your-client-id
+# GITHUB_CLIENT_SECRET=your-client-secret
+#
+# # LinkedIn (https://www.linkedin.com/developers/)
+# LINKEDIN_CLIENT_ID=your-client-id
+# LINKEDIN_CLIENT_SECRET=your-client-secret
+# =============================================================================
+
+# =============================================================================
+# QUICK TEST COMMANDS
+# =============================================================================
+#
+# Start services:
+#   docker compose up -d
+#
+# Check OAuth provider status:
+#   docker compose exec php bin/console sylius:oauth:check-providers
+#
+# Test OAuth endpoint (after obtaining auth code from provider):
+#   curl -X POST http://localhost:8080/api/v2/auth/oauth/google \
+#     -H "Content-Type: application/json" \
+#     -d '{"code": "YOUR_AUTH_CODE", "redirectUri": "http://localhost:3000/callback"}'
+#
+# View logs:
+#   docker compose logs -f php
+#
+# Stop services:
+#   docker compose down
+#
+# Reset everything:
+#   docker compose down -v
+# =============================================================================

@@ -6,7 +6,69 @@
 [![Total Downloads](https://poser.pugx.org/marac19901990/sylius-headless-oauth-bundle/downloads)](https://packagist.org/packages/marac19901990/sylius-headless-oauth-bundle)
 [![License](https://poser.pugx.org/marac19901990/sylius-headless-oauth-bundle/license)](https://packagist.org/packages/marac19901990/sylius-headless-oauth-bundle)
 
-A Symfony bundle that provides headless OAuth authentication for Sylius e-commerce platform via API Platform. Supports Google, Apple, Facebook Sign-In, and any OpenID Connect provider (Keycloak, Auth0, Okta, Azure AD, etc.) out of the box.
+A Symfony bundle that provides headless OAuth authentication for Sylius e-commerce platform via API Platform. Supports Google, Apple, Facebook, GitHub, LinkedIn Sign-In, and any OpenID Connect provider (Keycloak, Auth0, Okta, Azure AD, etc.) out of the box.
+
+## Quick Start (5 Minutes)
+
+Get OAuth authentication running in your Sylius shop:
+
+```bash
+# 1. Install the bundle
+composer require marac19901990/sylius-headless-oauth-bundle
+
+# 2. Run the interactive installer
+bin/console sylius:oauth:install
+```
+
+**3. Update your Customer entity** (`src/Entity/Customer/Customer.php`):
+
+```php
+<?php
+
+namespace App\Entity\Customer;
+
+use Doctrine\ORM\Mapping as ORM;
+use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
+use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityTrait;
+use Sylius\Component\Core\Model\Customer as BaseCustomer;
+
+#[ORM\Entity]
+#[ORM\Table(name: 'sylius_customer')]
+class Customer extends BaseCustomer implements OAuthIdentityInterface
+{
+    use OAuthIdentityTrait;
+}
+```
+
+```bash
+# 4. Create and run the migration
+bin/console doctrine:migrations:diff
+bin/console doctrine:migrations:migrate
+
+# 5. Configure your OAuth provider in .env.local
+echo "GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com" >> .env.local
+echo "GOOGLE_CLIENT_SECRET=your-client-secret" >> .env.local
+
+# 6. Test it!
+curl -X POST https://your-shop.com/api/v2/auth/oauth/google \
+  -H "Content-Type: application/json" \
+  -d '{"code": "auth-code-from-google", "redirectUri": "https://your-frontend.com/callback"}'
+```
+
+**Response:**
+```json
+{
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
+    "refreshToken": "1//0eXXXXXXXXXXXX",
+    "customerId": 123
+}
+```
+
+That's it! Your frontend can now authenticate users via OAuth and receive JWT tokens for API access.
+
+→ **[See full documentation below](#configuration)** | **[View architecture diagram](docs/oauth-flow.md)** | **[Compare with alternatives](docs/COMPARISON.md)**
+
+---
 
 ## Features
 
@@ -14,6 +76,8 @@ A Symfony bundle that provides headless OAuth authentication for Sylius e-commer
 - **Google Sign-In** - Full OAuth 2.0 implementation with userinfo endpoint
 - **Apple Sign-In** - Complete implementation including JWT client secret generation
 - **Facebook Sign-In** - Graph API integration for social login
+- **GitHub Sign-In** - OAuth 2.0 for developer-focused applications
+- **LinkedIn Sign-In** - Perfect for B2B e-commerce, wholesale portals, and professional services
 - **Generic OpenID Connect** - Support for any OIDC-compliant provider (Keycloak, Auth0, Okta, Azure AD)
 - **Automatic user management** - Finds existing users by provider ID or email, creates new users automatically
 - **Provider linking** - Links OAuth providers to existing accounts found by email
@@ -77,6 +141,10 @@ sylius_headless_oauth:
             enabled: true
             client_id: '%env(FACEBOOK_CLIENT_ID)%'
             client_secret: '%env(FACEBOOK_CLIENT_SECRET)%'
+        linkedin:
+            enabled: true
+            client_id: '%env(LINKEDIN_CLIENT_ID)%'
+            client_secret: '%env(LINKEDIN_CLIENT_SECRET)%'
 
         # Generic OIDC providers (Keycloak, Auth0, Okta, etc.)
         oidc:
@@ -105,6 +173,10 @@ APPLE_PRIVATE_KEY_PATH=%kernel.project_dir%/config/secrets/apple_auth_key.p8
 # Facebook Sign-In
 FACEBOOK_CLIENT_ID=your-facebook-app-id
 FACEBOOK_CLIENT_SECRET=your-facebook-app-secret
+
+# LinkedIn Sign-In
+LINKEDIN_CLIENT_ID=your-linkedin-client-id
+LINKEDIN_CLIENT_SECRET=your-linkedin-client-secret
 
 # Keycloak (or other OIDC provider)
 KEYCLOAK_ISSUER_URL=https://keycloak.example.com/realms/your-realm
@@ -138,6 +210,8 @@ The trait automatically adds:
 - `googleId` column (varchar 255, nullable, unique)
 - `appleId` column (varchar 255, nullable, unique)
 - `facebookId` column (varchar 255, nullable, unique)
+- `githubId` column (varchar 255, nullable, unique)
+- `linkedinId` column (varchar 255, nullable, unique)
 - `oidcId` column (varchar 255, nullable, unique) - for generic OIDC providers
 - Getters and setters for all fields
 
@@ -327,6 +401,14 @@ Unlink an OAuth provider from the current user's account. Requires authenticatio
 - The bundle automatically generates the required JWT client secret using your private key
 - **Email is required:** The bundle requires an email address from the OAuth provider. If a user selects Apple's "Hide My Email" option, Apple provides a private relay email (e.g., `xyz@privaterelay.appleid.com`) which works normally. If no email is returned (extremely rare), authentication fails with a clear error: `"Apple id_token missing required claim: email"`.
 - **Caching:** Apple's JWKS (public keys for JWT verification) are cached for 24 hours to minimize network calls. Client secrets are generated fresh per request as the cryptographic overhead is negligible (~1-5ms).
+
+### LinkedIn
+
+- **Best for:** B2B e-commerce, wholesale portals, professional services
+- Requires a LinkedIn Developer App at https://www.linkedin.com/developers/apps
+- Request access to "Sign In with LinkedIn using OpenID Connect" product
+- Uses LinkedIn's OpenID Connect implementation with the userinfo endpoint
+- Supports refresh tokens for maintaining sessions
 
 ## How It Works
 

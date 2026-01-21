@@ -30,6 +30,8 @@ final class ProviderFieldMapperTest extends TestCase
         yield 'google' => ['google', 'googleId'];
         yield 'apple' => ['apple', 'appleId'];
         yield 'facebook' => ['facebook', 'facebookId'];
+        yield 'github' => ['github', 'githubId'];
+        yield 'linkedin' => ['linkedin', 'linkedinId'];
         yield 'oidc' => ['oidc', 'oidcId'];
     }
 
@@ -134,8 +136,9 @@ final class ProviderFieldMapperTest extends TestCase
         self::assertContains('apple', $providers);
         self::assertContains('facebook', $providers);
         self::assertContains('github', $providers);
+        self::assertContains('linkedin', $providers);
         self::assertContains('oidc', $providers);
-        self::assertCount(5, $providers);
+        self::assertCount(6, $providers);
     }
 
     #[Test]
@@ -145,6 +148,7 @@ final class ProviderFieldMapperTest extends TestCase
         self::assertTrue($this->mapper->isBuiltInProvider('apple'));
         self::assertTrue($this->mapper->isBuiltInProvider('facebook'));
         self::assertTrue($this->mapper->isBuiltInProvider('github'));
+        self::assertTrue($this->mapper->isBuiltInProvider('linkedin'));
         self::assertTrue($this->mapper->isBuiltInProvider('oidc'));
     }
 
@@ -171,6 +175,8 @@ final class ProviderFieldMapperTest extends TestCase
         self::assertFalse($this->mapper->usesOidcField('google'));
         self::assertFalse($this->mapper->usesOidcField('apple'));
         self::assertFalse($this->mapper->usesOidcField('facebook'));
+        self::assertFalse($this->mapper->usesOidcField('github'));
+        self::assertFalse($this->mapper->usesOidcField('linkedin'));
     }
 
     private function createMockEntity(): OAuthIdentityInterface

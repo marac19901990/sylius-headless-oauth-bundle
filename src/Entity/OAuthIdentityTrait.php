@@ -36,6 +36,9 @@ trait OAuthIdentityTrait
     #[ORM\Column(type: 'string', length: 255, nullable: true, unique: true)]
     private ?string $githubId = null;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true, unique: true)]
+    private ?string $linkedinId = null;
+
     /**
      * Generic OIDC provider ID.
      * Used for custom OIDC providers like Keycloak, Auth0, Okta, etc.
@@ -82,6 +85,16 @@ trait OAuthIdentityTrait
     public function setGithubId(?string $githubId): void
     {
         $this->githubId = $githubId;
+    }
+
+    public function getLinkedinId(): ?string
+    {
+        return $this->linkedinId;
+    }
+
+    public function setLinkedinId(?string $linkedinId): void
+    {
+        $this->linkedinId = $linkedinId;
     }
 
     public function getOidcId(): ?string

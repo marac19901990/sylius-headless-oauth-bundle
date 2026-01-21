@@ -22,6 +22,10 @@ interface OAuthIdentityInterface
 
     public function setGithubId(?string $githubId): void;
 
+    public function getLinkedinId(): ?string;
+
+    public function setLinkedinId(?string $linkedinId): void;
+
     /**
      * Get the OAuth provider ID for a generic OIDC provider.
      * This is used when configuring custom OIDC providers (Keycloak, Auth0, Okta, etc.)

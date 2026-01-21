@@ -124,6 +124,17 @@ services:
         tags:
             - { name: 'sylius_headless_oauth.provider' }
 
+    # LinkedIn OAuth Provider
+    Marac\SyliusHeadlessOAuthBundle\Provider\LinkedInProvider:
+        arguments:
+            $httpClient: '@Marac\SyliusHeadlessOAuthBundle\Http\OAuthHttpClient'
+            $credentialValidator: '@Marac\SyliusHeadlessOAuthBundle\Validator\CredentialValidatorInterface'
+            $clientId: '%sylius_headless_oauth.providers.linkedin.client_id%'
+            $clientSecret: '%sylius_headless_oauth.providers.linkedin.client_secret%'
+            $enabled: '%sylius_headless_oauth.providers.linkedin.enabled%'
+        tags:
+            - { name: 'sylius_headless_oauth.provider' }
+
     # User Resolver
     Marac\SyliusHeadlessOAuthBundle\Resolver\UserResolver:
         arguments:

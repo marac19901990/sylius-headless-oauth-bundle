@@ -1,0 +1,482 @@
+openapi: 3.1.0
+info:
+  title: Sylius Headless OAuth Bundle API
+  description: |
+    OAuth authentication API for Sylius e-commerce platform.
+
+    This API enables headless OAuth authentication for SPAs and mobile apps,
+    allowing users to sign in with Google, Apple, Facebook, GitHub, LinkedIn,
+    or any OpenID Connect provider.
+
+    ## Authentication Flow
+
+    1. Frontend redirects user to OAuth provider (Google, Apple, etc.)
+    2. User authorizes the application
+    3. Provider redirects back with an authorization code
+    4. Frontend sends the code to this API
+    5. API exchanges code for tokens and returns a JWT
+
+    ## Using the JWT Token
+
+    Include the token in subsequent API requests:
+    ```
+    Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...
+    ```
+  version: 1.0.0
+  contact:
+    name: Sylius Headless OAuth Bundle
+    url: https://github.com/marac19901990/sylius-headless-oauth-bundle
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://your-sylius-shop.com
+    description: Production server
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: OAuth authentication endpoints
+  - name: Connections
+    description: Manage OAuth provider connections (requires authentication)
+  - name: Discovery
+    description: Discover available OAuth providers
+
+paths:
+  /api/v2/auth/oauth/providers:
+    get:
+      tags:
+        - Discovery
+      summary: List available OAuth providers
+      description: |
+        Returns a list of all enabled OAuth providers. Use this endpoint to
+        dynamically render OAuth login buttons in your frontend based on
+        which providers are configured.
+      operationId: getOAuthProviders
+      responses:
+        '200':
+          description: List of enabled OAuth providers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderListResponse'
+              example:
+                providers:
+                  - name: google
+                    displayName: Google
+                  - name: apple
+                    displayName: Apple
+                  - name: facebook
+                    displayName: Facebook
+                  - name: github
+                    displayName: GitHub
+                  - name: linkedin
+                    displayName: LinkedIn
+
+  /api/v2/auth/oauth/{provider}:
+    post:
+      tags:
+        - Authentication
+      summary: Exchange OAuth code for JWT token
+      description: |
+        Exchange an OAuth authorization code for a JWT token.
+
+        This is the main authentication endpoint. After a user authorizes
+        your application with an OAuth provider, send the authorization
+        code here to receive a JWT token.
+
+        **Supported providers:** google, apple, facebook, github, linkedin,
+        or any configured OIDC provider name (e.g., keycloak, auth0, okta).
+      operationId: authenticateOAuth
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          description: OAuth provider name
+          schema:
+            type: string
+            enum: [google, apple, facebook, github, linkedin]
+          examples:
+            google:
+              value: google
+              summary: Google Sign-In
+            apple:
+              value: apple
+              summary: Apple Sign-In
+            facebook:
+              value: facebook
+              summary: Facebook Login
+            github:
+              value: github
+              summary: GitHub OAuth
+            linkedin:
+              value: linkedin
+              summary: LinkedIn Sign-In
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthRequest'
+            examples:
+              google:
+                summary: Google OAuth request
+                value:
+                  code: "4/0AX4XfWh..."
+                  redirectUri: "https://your-app.com/oauth/callback"
+              apple:
+                summary: Apple OAuth request
+                value:
+                  code: "c1a2b3..."
+                  redirectUri: "https://your-app.com/oauth/callback"
+              withState:
+                summary: Request with CSRF state parameter
+                value:
+                  code: "4/0AX4XfWh..."
+                  redirectUri: "https://your-app.com/oauth/callback"
+                  state: "random_csrf_token_12345"
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthResponse'
+              example:
+                token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..."
+                refreshToken: "1//0eXXXXXXXXXXXX"
+                customerId: 123
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCode:
+                  summary: Invalid or expired authorization code
+                  value:
+                    code: 400
+                    message: "Google authentication failed: The code passed is incorrect or expired."
+                missingCode:
+                  summary: Missing authorization code
+                  value:
+                    code: 400
+                    message: "Authorization code is required"
+                invalidRedirectUri:
+                  summary: Redirect URI not in allowlist
+                  value:
+                    code: 400
+                    message: "Invalid redirect URI"
+                providerNotSupported:
+                  summary: Provider not enabled
+                  value:
+                    code: 400
+                    message: "Provider 'twitter' is not supported"
+
+  /api/v2/auth/oauth/refresh/{provider}:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token using OAuth refresh token
+      description: |
+        Use an OAuth refresh token to obtain a new JWT token.
+
+        **Note:** Not all providers support refresh tokens:
+        - Google: Supports refresh tokens
+        - Apple: Supports refresh tokens (may rotate on each use)
+        - Facebook: Limited refresh token support
+        - GitHub: Does not support refresh tokens (access tokens don't expire)
+        - LinkedIn: Supports refresh tokens
+      operationId: refreshOAuthToken
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          description: OAuth provider name
+          schema:
+            type: string
+            enum: [google, apple, facebook, linkedin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refreshToken: "1//0eXXXXXXXXXXXX"
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthResponse'
+              example:
+                token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..."
+                refreshToken: "1//0eNewRefreshToken"
+                customerId: 123
+        '400':
+          description: Invalid refresh token or provider doesn't support refresh
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: 400
+                message: "Invalid refresh token"
+
+  /api/v2/auth/oauth/connections:
+    get:
+      tags:
+        - Connections
+      summary: List connected OAuth providers
+      description: |
+        Returns a list of OAuth providers connected to the authenticated user's account.
+
+        **Requires authentication:** Include a valid JWT token in the Authorization header.
+      operationId: listOAuthConnections
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of connected providers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionListResponse'
+              example:
+                connections:
+                  - provider: google
+                    displayName: Google
+                    connectedAt: null
+                  - provider: apple
+                    displayName: Apple
+                    connectedAt: null
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: 401
+                message: "Authentication required"
+
+  /api/v2/auth/oauth/connections/{provider}:
+    delete:
+      tags:
+        - Connections
+      summary: Disconnect OAuth provider
+      description: |
+        Unlink an OAuth provider from the authenticated user's account.
+
+        **Requires authentication:** Include a valid JWT token in the Authorization header.
+
+        **Note:** You cannot unlink the last authentication method if the user
+        has no password set.
+      operationId: unlinkOAuthConnection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          description: OAuth provider name to disconnect
+          schema:
+            type: string
+            enum: [google, apple, facebook, github, linkedin]
+      responses:
+        '200':
+          description: Provider disconnected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnlinkResponse'
+              example:
+                message: "Provider disconnected successfully"
+                provider: google
+        '400':
+          description: Cannot unlink provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notConnected:
+                  summary: Provider not connected
+                  value:
+                    code: 400
+                    message: "Provider 'google' is not connected to this account"
+                lastMethod:
+                  summary: Cannot unlink last auth method
+                  value:
+                    code: 400
+                    message: "Cannot unlink the last authentication method"
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: 401
+                message: "Authentication required"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from OAuth authentication
+
+  schemas:
+    OAuthRequest:
+      type: object
+      required:
+        - code
+        - redirectUri
+      properties:
+        code:
+          type: string
+          description: Authorization code from OAuth provider
+          example: "4/0AX4XfWh..."
+        redirectUri:
+          type: string
+          format: uri
+          description: |
+            The redirect URI used in the authorization request.
+            Must match the URI registered with the OAuth provider and
+            be in the allowed_redirect_uris configuration.
+          example: "https://your-app.com/oauth/callback"
+        state:
+          type: string
+          description: |
+            Optional CSRF protection token. If provided, it will be
+            echoed back in the response for client-side verification.
+          example: "random_csrf_token_12345"
+
+    OAuthResponse:
+      type: object
+      required:
+        - token
+        - customerId
+      properties:
+        token:
+          type: string
+          description: JWT access token for API authentication
+          example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..."
+        refreshToken:
+          type: string
+          nullable: true
+          description: |
+            OAuth refresh token for obtaining new access tokens.
+            Not all providers return refresh tokens.
+          example: "1//0eXXXXXXXXXXXX"
+        customerId:
+          type: integer
+          description: Sylius customer ID
+          example: 123
+        state:
+          type: string
+          description: Echoed state parameter (if provided in request)
+          example: "random_csrf_token_12345"
+
+    RefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: OAuth refresh token
+          example: "1//0eXXXXXXXXXXXX"
+
+    ProviderListResponse:
+      type: object
+      required:
+        - providers
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Provider'
+
+    Provider:
+      type: object
+      required:
+        - name
+        - displayName
+      properties:
+        name:
+          type: string
+          description: Provider identifier used in API endpoints
+          example: "google"
+        displayName:
+          type: string
+          description: Human-readable provider name for UI display
+          example: "Google"
+
+    ConnectionListResponse:
+      type: object
+      required:
+        - connections
+      properties:
+        connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/Connection'
+
+    Connection:
+      type: object
+      required:
+        - provider
+        - displayName
+      properties:
+        provider:
+          type: string
+          description: Provider identifier
+          example: "google"
+        displayName:
+          type: string
+          description: Human-readable provider name
+          example: "Google"
+        connectedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the provider was connected (if tracked)
+          example: "2024-01-15T10:30:00Z"
+
+    UnlinkResponse:
+      type: object
+      required:
+        - message
+        - provider
+      properties:
+        message:
+          type: string
+          description: Success message
+          example: "Provider disconnected successfully"
+        provider:
+          type: string
+          description: The provider that was disconnected
+          example: "google"
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid authorization code"

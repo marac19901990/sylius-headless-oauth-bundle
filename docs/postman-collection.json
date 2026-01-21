@@ -1,0 +1,515 @@
+{
+  "info": {
+    "name": "Sylius Headless OAuth Bundle",
+    "_postman_id": "sylius-headless-oauth-bundle",
+    "description": "OAuth authentication API for Sylius e-commerce platform.\n\nThis collection contains all endpoints for:\n- OAuth authentication (Google, Apple, Facebook, GitHub, LinkedIn)\n- Token refresh\n- Managing OAuth connections\n- Provider discovery\n\n## Getting Started\n\n1. Set the `baseUrl` variable to your Sylius shop URL\n2. Use the \"Discover Providers\" endpoint to see enabled providers\n3. Complete OAuth flow in your frontend to get an authorization code\n4. Use the \"Authenticate\" endpoint to exchange the code for a JWT\n5. Use the JWT in subsequent requests\n\n## Variables\n\n- `baseUrl`: Your Sylius shop URL (e.g., https://shop.example.com)\n- `jwtToken`: JWT token from authentication (auto-set after login)\n- `provider`: OAuth provider name (google, apple, facebook, github, linkedin)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "jwtToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "provider",
+      "value": "google",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Discovery",
+      "description": "Endpoints for discovering available OAuth providers",
+      "item": [
+        {
+          "name": "List Available Providers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/providers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "providers"]
+            },
+            "description": "Returns a list of all enabled OAuth providers. Use this to dynamically render OAuth buttons in your frontend."
+          },
+          "response": [
+            {
+              "name": "Success - Multiple Providers",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"providers\": [\n    {\"name\": \"google\", \"displayName\": \"Google\"},\n    {\"name\": \"apple\", \"displayName\": \"Apple\"},\n    {\"name\": \"facebook\", \"displayName\": \"Facebook\"},\n    {\"name\": \"github\", \"displayName\": \"GitHub\"},\n    {\"name\": \"linkedin\", \"displayName\": \"LinkedIn\"}\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "description": "OAuth authentication endpoints",
+      "item": [
+        {
+          "name": "Authenticate with Google",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwtToken', response.token);",
+                  "    if (response.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.refreshToken);",
+                  "    }",
+                  "    console.log('JWT token saved to collection variables');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"YOUR_GOOGLE_AUTH_CODE\",\n  \"redirectUri\": \"https://your-app.com/oauth/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/google",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "google"]
+            },
+            "description": "Exchange a Google authorization code for a JWT token.\n\n**How to get the authorization code:**\n1. Redirect user to Google OAuth consent screen\n2. User authorizes your app\n3. Google redirects back with `?code=...` parameter\n4. Send that code here"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...\",\n  \"refreshToken\": \"1//0eXXXXXXXXXXXX\",\n  \"customerId\": 123\n}"
+            },
+            {
+              "name": "Invalid Code",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"code\": 400,\n  \"message\": \"Google authentication failed: The code passed is incorrect or expired.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Authenticate with Apple",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwtToken', response.token);",
+                  "    if (response.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"YOUR_APPLE_AUTH_CODE\",\n  \"redirectUri\": \"https://your-app.com/oauth/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/apple",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "apple"]
+            },
+            "description": "Exchange an Apple authorization code for a JWT token.\n\n**Note:** Apple only sends user's name on the first authorization. Subsequent authentications only include email and Apple ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Authenticate with Facebook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwtToken', response.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"YOUR_FACEBOOK_AUTH_CODE\",\n  \"redirectUri\": \"https://your-app.com/oauth/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/facebook",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "facebook"]
+            },
+            "description": "Exchange a Facebook authorization code for a JWT token."
+          },
+          "response": []
+        },
+        {
+          "name": "Authenticate with GitHub",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwtToken', response.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"YOUR_GITHUB_AUTH_CODE\",\n  \"redirectUri\": \"https://your-app.com/oauth/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/github",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "github"]
+            },
+            "description": "Exchange a GitHub authorization code for a JWT token.\n\n**Note:** GitHub access tokens don't expire and refresh tokens are not provided."
+          },
+          "response": []
+        },
+        {
+          "name": "Authenticate with LinkedIn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwtToken', response.token);",
+                  "    if (response.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"YOUR_LINKEDIN_AUTH_CODE\",\n  \"redirectUri\": \"https://your-app.com/oauth/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/linkedin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "linkedin"]
+            },
+            "description": "Exchange a LinkedIn authorization code for a JWT token.\n\n**Use case:** B2B e-commerce, wholesale portals, professional services."
+          },
+          "response": []
+        },
+        {
+          "name": "Authenticate with OIDC Provider",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwtToken', response.token);",
+                  "    if (response.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"YOUR_OIDC_AUTH_CODE\",\n  \"redirectUri\": \"https://your-app.com/oauth/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/{{provider}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "{{provider}}"]
+            },
+            "description": "Exchange an authorization code from any configured OIDC provider.\n\nSet the `provider` variable to your OIDC provider name (e.g., keycloak, auth0, okta)."
+          },
+          "response": []
+        },
+        {
+          "name": "Authenticate with State (CSRF)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwtToken', response.token);",
+                  "    // Verify state matches",
+                  "    pm.test('State matches', function() {",
+                  "        pm.expect(response.state).to.equal('my_csrf_token_12345');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"YOUR_AUTH_CODE\",\n  \"redirectUri\": \"https://your-app.com/oauth/callback\",\n  \"state\": \"my_csrf_token_12345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/{{provider}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "{{provider}}"]
+            },
+            "description": "Authenticate with CSRF state parameter for additional security.\n\nThe state is echoed back in the response for client-side verification."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Token Refresh",
+      "description": "Refresh expired JWT tokens using OAuth refresh tokens",
+      "item": [
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwtToken', response.token);",
+                  "    if (response.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', response.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/refresh/{{provider}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "refresh", "{{provider}}"]
+            },
+            "description": "Use a refresh token to get a new JWT access token.\n\n**Note:** GitHub does not support refresh tokens."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Connections",
+      "description": "Manage OAuth provider connections (requires authentication)",
+      "item": [
+        {
+          "name": "List My Connections",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/connections",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "connections"]
+            },
+            "description": "List all OAuth providers connected to your account.\n\n**Requires authentication:** Uses the JWT token from authentication."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"connections\": [\n    {\"provider\": \"google\", \"displayName\": \"Google\", \"connectedAt\": null},\n    {\"provider\": \"apple\", \"displayName\": \"Apple\", \"connectedAt\": null}\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Disconnect Provider",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/oauth/connections/{{provider}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "oauth", "connections", "{{provider}}"]
+            },
+            "description": "Unlink an OAuth provider from your account.\n\n**Note:** You cannot unlink the last authentication method if you don't have a password set."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Provider disconnected successfully\",\n  \"provider\": \"google\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

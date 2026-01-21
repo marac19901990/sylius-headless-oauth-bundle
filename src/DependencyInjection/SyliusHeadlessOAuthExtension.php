@@ -54,6 +54,10 @@ final class SyliusHeadlessOAuthExtension extends Extension implements PrependExt
         $container->setParameter('sylius_headless_oauth.providers.github.client_id', $config['providers']['github']['client_id']);
         $container->setParameter('sylius_headless_oauth.providers.github.client_secret', $config['providers']['github']['client_secret']);
 
+        $container->setParameter('sylius_headless_oauth.providers.linkedin.enabled', $config['providers']['linkedin']['enabled']);
+        $container->setParameter('sylius_headless_oauth.providers.linkedin.client_id', $config['providers']['linkedin']['client_id']);
+        $container->setParameter('sylius_headless_oauth.providers.linkedin.client_secret', $config['providers']['linkedin']['client_secret']);
+
         // Register OIDC providers
         $this->registerOidcProviders($container, $config['providers']['oidc'] ?? []);
 
