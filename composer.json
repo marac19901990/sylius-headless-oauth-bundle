@@ -8,9 +8,19 @@
         "oauth",
         "google",
         "apple",
+        "facebook",
+        "github",
+        "oidc",
+        "openid-connect",
+        "keycloak",
+        "auth0",
+        "okta",
         "headless",
         "api-platform",
-        "authentication"
+        "authentication",
+        "social-login",
+        "sso",
+        "jwt"
     ],
     "authors": [
         {
