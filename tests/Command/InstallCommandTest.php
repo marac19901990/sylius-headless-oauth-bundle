@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Tests\Command;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthChecker;
 use Marac\SyliusHeadlessOAuthBundle\Command\InstallCommand;
 use Marac\SyliusHeadlessOAuthBundle\Provider\ConfigurableOAuthProviderInterface;
@@ -11,12 +13,15 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
 class InstallCommandTest extends TestCase
 {
     private string $tempDir;
     private Filesystem $filesystem;
+    private ParameterBagInterface $parameterBag;
+    private EntityManagerInterface $entityManager;
 
     protected function setUp(): void
     {
@@ -24,6 +29,13 @@ class InstallCommandTest extends TestCase
         $this->tempDir = sys_get_temp_dir() . '/sylius_oauth_test_' . uniqid();
         $this->filesystem->mkdir($this->tempDir);
         $this->filesystem->mkdir($this->tempDir . '/config/packages');
+
+        $this->parameterBag = $this->createMock(ParameterBagInterface::class);
+        $this->parameterBag->method('has')->willReturn(false);
+
+        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->entityManager->method('getClassMetadata')
+            ->willThrowException(new Exception('Not mapped'));
     }
 
     protected function tearDown(): void
@@ -198,7 +210,13 @@ class InstallCommandTest extends TestCase
     public function testCommandHasHelpText(): void
     {
         $healthChecker = new ProviderHealthChecker([]);
-        $command = new InstallCommand($healthChecker, $this->tempDir, $this->filesystem);
+        $command = new InstallCommand(
+            $healthChecker,
+            $this->tempDir,
+            $this->filesystem,
+            $this->parameterBag,
+            $this->entityManager,
+        );
 
         $help = $command->getHelp();
         $description = $command->getDescription();
@@ -211,7 +229,13 @@ class InstallCommandTest extends TestCase
     public function testCommandHasExpectedOptions(): void
     {
         $healthChecker = new ProviderHealthChecker([]);
-        $command = new InstallCommand($healthChecker, $this->tempDir, $this->filesystem);
+        $command = new InstallCommand(
+            $healthChecker,
+            $this->tempDir,
+            $this->filesystem,
+            $this->parameterBag,
+            $this->entityManager,
+        );
         $definition = $command->getDefinition();
 
         $this->assertTrue($definition->hasOption('force'));
@@ -225,7 +249,13 @@ class InstallCommandTest extends TestCase
     private function createCommandTester(array $providers): CommandTester
     {
         $healthChecker = new ProviderHealthChecker($providers);
-        $command = new InstallCommand($healthChecker, $this->tempDir, $this->filesystem);
+        $command = new InstallCommand(
+            $healthChecker,
+            $this->tempDir,
+            $this->filesystem,
+            $this->parameterBag,
+            $this->entityManager,
+        );
 
         $application = new Application();
         $application->add($command);

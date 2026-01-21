@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 namespace Marac\SyliusHeadlessOAuthBundle\Command;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthCheckerInterface;
 use Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthStatus;
 use Marac\SyliusHeadlessOAuthBundle\Entity\OAuthIdentityInterface;
+use Sylius\Component\Customer\Model\CustomerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
 use function dirname;
 use function extension_loaded;
+use function is_string;
 use function sprintf;
 
 use const PHP_VERSION;
@@ -35,6 +40,8 @@ final class InstallCommand extends Command
         private readonly ProviderHealthCheckerInterface $healthChecker,
         private readonly string $projectDir,
         private readonly Filesystem $filesystem,
+        private readonly ParameterBagInterface $parameterBag,
+        private readonly EntityManagerInterface $entityManager,
     ) {
         parent::__construct();
     }
@@ -210,8 +217,8 @@ final class InstallCommand extends Command
         $io->newLine();
 
         // Try to detect if Customer already implements the interface
-        $customerClass = 'App\\Entity\\Customer\\Customer';
-        if (class_exists($customerClass)) {
+        $customerClass = $this->getCustomerClass();
+        if ($customerClass !== null && class_exists($customerClass)) {
             if (is_subclass_of($customerClass, OAuthIdentityInterface::class)) {
                 $io->success('Customer entity already implements OAuthIdentityInterface');
             } else {
@@ -251,7 +258,7 @@ final class InstallCommand extends Command
         $rows = [];
         foreach ($envVars as $provider => $vars) {
             foreach ($vars as $var) {
-                $value = getenv($var);
+                $value = $this->getEnvVar($var);
                 $status = $value !== false && $value !== ''
                     ? '<info>Configured</info>'
                     : '<comment>Not set</comment>';
@@ -348,5 +355,55 @@ final class InstallCommand extends Command
             '',
             'For troubleshooting, see <info>docs/TROUBLESHOOTING.md</info>',
         ]);
+    }
+
+    /**
+     * Gets an environment variable with fallback support.
+     * Matches Symfony's EnvVarProcessor priority: $_ENV, $_SERVER, getenv()
+     */
+    private function getEnvVar(string $name): string|false
+    {
+        if (isset($_ENV[$name]) && $_ENV[$name] !== '') {
+            return $_ENV[$name];
+        }
+
+        if (!str_starts_with($name, 'HTTP_') && isset($_SERVER[$name]) && $_SERVER[$name] !== '') {
+            return $_SERVER[$name];
+        }
+
+        $value = getenv($name);
+
+        return $value !== false && $value !== '' ? $value : false;
+    }
+
+    /**
+     * Gets the configured Sylius customer class.
+     *
+     * Strategy:
+     * 1. Try Sylius parameter (fastest)
+     * 2. Ask Doctrine for CustomerInterface implementor (most robust)
+     * 3. Return null - no hardcoded guessing
+     */
+    private function getCustomerClass(): ?string
+    {
+        // 1. Try the standard Sylius parameter
+        if ($this->parameterBag->has('sylius.model.customer.class')) {
+            $class = $this->parameterBag->get('sylius.model.customer.class');
+            if (is_string($class) && class_exists($class)) {
+                return $class;
+            }
+        }
+
+        // 2. Ask Doctrine: "Who implements CustomerInterface?"
+        try {
+            $metadata = $this->entityManager->getClassMetadata(CustomerInterface::class);
+
+            return $metadata->getName();
+        } catch (Exception) {
+            // Interface isn't mapped yet - expected during initial setup
+        }
+
+        // 3. Return null - let caller decide how to handle
+        return null;
     }
 }

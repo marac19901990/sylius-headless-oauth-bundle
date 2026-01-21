@@ -187,6 +187,8 @@ services:
             $healthChecker: '@Marac\SyliusHeadlessOAuthBundle\Checker\ProviderHealthCheckerInterface'
             $projectDir: '%kernel.project_dir%'
             $filesystem: '@Symfony\Component\Filesystem\Filesystem'
+            $parameterBag: '@Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface'
+            $entityManager: '@doctrine.orm.entity_manager'
         tags:
             - { name: 'console.command' }
 
