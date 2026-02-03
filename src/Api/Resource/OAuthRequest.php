@@ -6,6 +6,7 @@ namespace Marac\SyliusHeadlessOAuthBundle\Api\Resource;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model;
 use Marac\SyliusHeadlessOAuthBundle\Api\Response\OAuthResponse;
 use Marac\SyliusHeadlessOAuthBundle\Processor\OAuthProcessor;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -17,11 +18,11 @@ use Symfony\Component\Validator\Constraints as Assert;
             uriTemplate: '/auth/oauth/{provider}',
             output: OAuthResponse::class,
             processor: OAuthProcessor::class,
-            openapiContext: [
-                'summary' => 'Authenticate via OAuth provider',
-                'description' => 'Exchange an OAuth authorization code for a JWT token. Supports Google and Apple Sign-In.',
-                'tags' => ['OAuth'],
-            ],
+            openapi: new Model\Operation(
+                summary: 'Authenticate via OAuth provider',
+                description: 'Exchange an OAuth authorization code for a JWT token. Supports Google and Apple Sign-In.',
+                tags: ['OAuth'],
+            ),
         ),
     ],
 )]

@@ -6,6 +6,8 @@ namespace Marac\SyliusHeadlessOAuthBundle\Api\Resource;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
+use ApiPlatform\OpenApi\Model;
+use ArrayObject;
 use Marac\SyliusHeadlessOAuthBundle\Api\Action\ProviderDiscoveryAction;
 
 /**
@@ -35,14 +37,14 @@ use Marac\SyliusHeadlessOAuthBundle\Api\Action\ProviderDiscoveryAction;
             uriTemplate: '/auth/oauth/providers',
             controller: ProviderDiscoveryAction::class,
             read: false,
-            openapiContext: [
-                'summary' => 'Get available OAuth providers',
-                'description' => 'Returns a list of enabled OAuth providers for rendering login buttons.',
-                'tags' => ['OAuth'],
-                'responses' => [
-                    '200' => [
-                        'description' => 'List of enabled OAuth providers',
-                        'content' => [
+            openapi: new Model\Operation(
+                summary: 'Get available OAuth providers',
+                description: 'Returns a list of enabled OAuth providers for rendering login buttons.',
+                tags: ['OAuth'],
+                responses: [
+                    '200' => new Model\Response(
+                        description: 'List of enabled OAuth providers',
+                        content: new ArrayObject([
                             'application/json' => [
                                 'schema' => [
                                     'type' => 'object',
@@ -74,10 +76,10 @@ use Marac\SyliusHeadlessOAuthBundle\Api\Action\ProviderDiscoveryAction;
                                     ],
                                 ],
                             ],
-                        ],
-                    ],
+                        ]),
+                    ),
                 ],
-            ],
+            ),
         ),
     ],
 )]
