@@ -16,8 +16,8 @@ return (new PhpCsFixer\Config())
     ->setRules([
         '@Symfony' => true,
         '@Symfony:risky' => true,
-        '@PHP82Migration' => true,
-        '@PHPUnit100Migration:risky' => true,
+        '@PHP8x2Migration' => true,
+        '@PHPUnit10x0Migration:risky' => true,
         'array_syntax' => ['syntax' => 'short'],
         'blank_line_before_statement' => [
             'statements' => [
@@ -93,7 +93,7 @@ return (new PhpCsFixer\Config())
         'trailing_comma_in_multiline' => [
             'elements' => ['arrays', 'arguments', 'parameters'],
         ],
-        'visibility_required' => [
+        'modifier_keywords' => [
             'elements' => ['property', 'method', 'const'],
         ],
         'void_return' => true,
