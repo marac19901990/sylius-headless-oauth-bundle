@@ -81,7 +81,7 @@ class GoogleProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse, $userInfoResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse, $userInfoResponse) {
                 if ($method === 'POST' && str_contains($url, 'oauth2.googleapis.com/token')) {
                     return $tokenResponse;
                 }
@@ -358,7 +358,7 @@ class GoogleProviderTest extends TestCase
             ->with(
                 'POST',
                 'https://oauth2.googleapis.com/token',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return isset($options['form_params']['grant_type'])
                         && $options['form_params']['grant_type'] === 'refresh_token'
                         && $options['form_params']['refresh_token'] === 'original-refresh-token';
@@ -476,7 +476,7 @@ class GoogleProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse) {
                 if ($method === 'POST') {
                     return $tokenResponse;
                 }

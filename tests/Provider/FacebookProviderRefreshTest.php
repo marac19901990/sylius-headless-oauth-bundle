@@ -54,7 +54,7 @@ class FacebookProviderRefreshTest extends TestCase
             ->with(
                 'POST',
                 'https://graph.facebook.com/v19.0/oauth/access_token',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return $options['form_params']['grant_type'] === 'refresh_token'
                         && $options['form_params']['refresh_token'] === 'original-refresh-token';
                 }),
@@ -143,7 +143,7 @@ class FacebookProviderRefreshTest extends TestCase
             ->with(
                 'GET',
                 'https://graph.facebook.com/me',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return $options['query']['access_token'] === 'test-access-token'
                         && $options['query']['fields'] === 'id,email,first_name,last_name';
                 }),

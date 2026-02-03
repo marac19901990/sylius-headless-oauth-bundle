@@ -54,7 +54,7 @@ class GoogleProviderRefreshTest extends TestCase
             ->with(
                 'POST',
                 'https://oauth2.googleapis.com/token',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return $options['form_params']['grant_type'] === 'refresh_token'
                         && $options['form_params']['refresh_token'] === 'original-refresh-token';
                 }),
@@ -120,7 +120,7 @@ class GoogleProviderRefreshTest extends TestCase
             ->with(
                 'GET',
                 'https://www.googleapis.com/oauth2/v2/userinfo',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return $options['headers']['Authorization'] === 'Bearer test-access-token';
                 }),
             )

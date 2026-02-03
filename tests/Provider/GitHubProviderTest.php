@@ -84,7 +84,7 @@ class GitHubProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse, $userInfoResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse, $userInfoResponse) {
                 if ($method === 'POST' && str_contains($url, 'github.com/login/oauth/access_token')) {
                     return $tokenResponse;
                 }
@@ -128,7 +128,7 @@ class GitHubProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(3))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse, $userInfoResponse, $emailsResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse, $userInfoResponse, $emailsResponse) {
                 if ($method === 'POST') {
                     return $tokenResponse;
                 }
@@ -215,7 +215,7 @@ class GitHubProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(3))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse, $userInfoResponse, $emailsResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse, $userInfoResponse, $emailsResponse) {
                 if ($method === 'POST') {
                     return $tokenResponse;
                 }
@@ -462,7 +462,7 @@ class GitHubProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse) {
                 if ($method === 'POST') {
                     return $tokenResponse;
                 }
@@ -518,7 +518,7 @@ class GitHubProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(3))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse, $userInfoResponse, $emailsResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse, $userInfoResponse, $emailsResponse) {
                 if ($method === 'POST') {
                     return $tokenResponse;
                 }

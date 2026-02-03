@@ -44,9 +44,9 @@ class OAuthProcessorTest extends TestCase
 
         // Configure provider supports() methods
         $this->googleProvider->method('supports')
-            ->willReturnCallback(fn (string $p) => strtolower($p) === 'google');
+            ->willReturnCallback(static fn (string $p) => strtolower($p) === 'google');
         $this->appleProvider->method('supports')
-            ->willReturnCallback(fn (string $p) => strtolower($p) === 'apple');
+            ->willReturnCallback(static fn (string $p) => strtolower($p) === 'apple');
 
         $this->processor = new OAuthProcessor(
             providers: [$this->googleProvider, $this->appleProvider],
@@ -368,7 +368,7 @@ class OAuthProcessorTest extends TestCase
             ->expects($this->once())
             ->method('dispatch')
             ->with(
-                $this->callback(function ($event) use ($shopUser, $userData) {
+                $this->callback(static function ($event) use ($shopUser, $userData) {
                     return $event instanceof OAuthPostAuthenticationEvent
                         && $event->shopUser === $shopUser
                         && $event->userData === $userData
@@ -409,7 +409,7 @@ class OAuthProcessorTest extends TestCase
             ->expects($this->once())
             ->method('dispatch')
             ->with(
-                $this->callback(function ($event) {
+                $this->callback(static function ($event) {
                     return $event instanceof OAuthPostAuthenticationEvent
                         && $event->isNewUser === false;
                 }),

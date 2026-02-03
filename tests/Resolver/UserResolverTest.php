@@ -400,7 +400,7 @@ class UserResolverTest extends TestCase
         $persistedEntities = [];
         $this->entityManager
             ->method('persist')
-            ->willReturnCallback(function ($entity) use (&$persistedEntities): void {
+            ->willReturnCallback(static function ($entity) use (&$persistedEntities): void {
                 $persistedEntities[] = $entity;
             });
 
@@ -445,7 +445,7 @@ class UserResolverTest extends TestCase
         $newShopUser
             ->expects($this->once())
             ->method('setVerifiedAt')
-            ->with($this->callback(function ($dateTime) {
+            ->with($this->callback(static function ($dateTime) {
                 return $dateTime instanceof DateTimeInterface
                     && abs($dateTime->getTimestamp() - time()) < 5; // Within 5 seconds
             }));
@@ -476,7 +476,7 @@ class UserResolverTest extends TestCase
             ->expects($this->once())
             ->method('dispatch')
             ->with(
-                $this->callback(function ($event) use ($userData) {
+                $this->callback(static function ($event) use ($userData) {
                     return $event instanceof OAuthPreUserCreateEvent
                         && $event->userData === $userData;
                 }),
@@ -516,7 +516,7 @@ class UserResolverTest extends TestCase
             ->expects($this->once())
             ->method('dispatch')
             ->with(
-                $this->callback(function ($event) use ($customer) {
+                $this->callback(static function ($event) use ($customer) {
                     return $event instanceof OAuthProviderLinkedEvent
                         && $event->customer === $customer
                         && $event->provider === 'google'

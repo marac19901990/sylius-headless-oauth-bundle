@@ -96,7 +96,7 @@ final class FullOAuthFlowTest extends TestCase
         $this->userResolver
             ->expects($this->once())
             ->method('resolve')
-            ->with($this->callback(function (OAuthUserData $userData) {
+            ->with($this->callback(static function (OAuthUserData $userData) {
                 return $userData->provider === 'google'
                     && $userData->providerId === 'google-user-id-789'
                     && $userData->email === 'integration@gmail.com'
@@ -231,7 +231,7 @@ final class FullOAuthFlowTest extends TestCase
         // Create a mock provider for 'custom' that will be selected instead of Google
         $customProvider = $this->createMock(\Marac\SyliusHeadlessOAuthBundle\Provider\OAuthProviderInterface::class);
         $customProvider->method('supports')
-            ->willReturnCallback(fn (string $p) => strtolower($p) === 'custom');
+            ->willReturnCallback(static fn (string $p) => strtolower($p) === 'custom');
         $customProvider->method('getUserData')
             ->willReturn(new OAuthUserData(
                 provider: 'custom',

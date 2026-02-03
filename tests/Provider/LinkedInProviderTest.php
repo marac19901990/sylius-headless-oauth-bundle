@@ -88,7 +88,7 @@ class LinkedInProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse, $userInfoResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse, $userInfoResponse) {
                 if ($method === 'POST' && str_contains($url, 'linkedin.com/oauth/v2/accessToken')) {
                     return $tokenResponse;
                 }
@@ -473,7 +473,7 @@ class LinkedInProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse) {
                 if ($method === 'POST') {
                     return $tokenResponse;
                 }

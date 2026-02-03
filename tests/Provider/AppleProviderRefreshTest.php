@@ -72,7 +72,7 @@ class AppleProviderRefreshTest extends TestCase
             ->with(
                 'POST',
                 'https://appleid.apple.com/auth/token',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return $options['form_params']['grant_type'] === 'refresh_token'
                         && $options['form_params']['refresh_token'] === 'original-refresh-token'
                         && $options['form_params']['client_secret'] === 'generated-client-secret';

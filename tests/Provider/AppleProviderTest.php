@@ -434,7 +434,7 @@ class AppleProviderTest extends TestCase
             ->with(
                 'POST',
                 'https://appleid.apple.com/auth/token',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return isset($options['form_params']['grant_type'])
                         && $options['form_params']['grant_type'] === 'refresh_token';
                 }),

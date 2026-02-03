@@ -26,7 +26,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('info')
             ->with(
                 'OAuth authentication successful',
-                $this->callback(function (array $context): bool {
+                $this->callback(static function (array $context): bool {
                     return $context['provider'] === 'google'
                         && $context['email'] === 'u***@example.com'
                         && $context['customer_id'] === 123
@@ -44,7 +44,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('info')
             ->with(
                 'OAuth authentication successful',
-                $this->callback(fn (array $context): bool => $context['is_new_user'] === true),
+                $this->callback(static fn (array $context): bool => $context['is_new_user'] === true),
             );
 
         $this->securityLogger->logAuthSuccess('google', 'user@example.com', 123, true);
@@ -56,7 +56,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('warning')
             ->with(
                 'OAuth authentication failed',
-                $this->callback(function (array $context): bool {
+                $this->callback(static function (array $context): bool {
                     return $context['provider'] === 'apple'
                         && $context['reason'] === 'Invalid code'
                         && $context['event_type'] === 'oauth_auth_failure';
@@ -72,7 +72,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('warning')
             ->with(
                 'OAuth authentication failed',
-                $this->callback(function (array $context): bool {
+                $this->callback(static function (array $context): bool {
                     return $context['extra_key'] === 'extra_value';
                 }),
             );
@@ -86,7 +86,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('info')
             ->with(
                 'OAuth token refresh successful',
-                $this->callback(function (array $context): bool {
+                $this->callback(static function (array $context): bool {
                     return $context['provider'] === 'google'
                         && $context['customer_id'] === 456
                         && $context['event_type'] === 'oauth_refresh_success';
@@ -102,7 +102,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('warning')
             ->with(
                 'OAuth token refresh failed',
-                $this->callback(function (array $context): bool {
+                $this->callback(static function (array $context): bool {
                     return $context['provider'] === 'apple'
                         && $context['reason'] === 'Token expired'
                         && $context['event_type'] === 'oauth_refresh_failure';
@@ -118,7 +118,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('warning')
             ->with(
                 'Suspicious OAuth activity detected',
-                $this->callback(function (array $context): bool {
+                $this->callback(static function (array $context): bool {
                     return $context['type'] === 'forged_jwt'
                         && $context['event_type'] === 'oauth_suspicious_activity'
                         && $context['ip'] === '192.168.1.1';
@@ -134,7 +134,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('warning')
             ->with(
                 'JWT verification failed',
-                $this->callback(function (array $context): bool {
+                $this->callback(static function (array $context): bool {
                     return $context['provider'] === 'apple'
                         && $context['reason'] === 'Invalid signature'
                         && $context['event_type'] === 'oauth_jwt_verification_failure';
@@ -150,7 +150,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('warning')
             ->with(
                 'Redirect URI rejected',
-                $this->callback(function (array $context): bool {
+                $this->callback(static function (array $context): bool {
                     return $context['redirect_host'] === 'evil.com'
                         && $context['provider'] === 'google'
                         && $context['event_type'] === 'oauth_redirect_uri_rejected';
@@ -166,7 +166,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('info')
             ->with(
                 'OAuth authentication successful',
-                $this->callback(fn (array $context): bool => $context['email'] === '***@example.com'),
+                $this->callback(static fn (array $context): bool => $context['email'] === '***@example.com'),
             );
 
         $this->securityLogger->logAuthSuccess('google', 'a@example.com', 1);
@@ -178,7 +178,7 @@ final class OAuthSecurityLoggerTest extends TestCase
             ->method('info')
             ->with(
                 'OAuth authentication successful',
-                $this->callback(fn (array $context): bool => $context['email'] === '***'),
+                $this->callback(static fn (array $context): bool => $context['email'] === '***'),
             );
 
         $this->securityLogger->logAuthSuccess('google', 'not-an-email', 1);

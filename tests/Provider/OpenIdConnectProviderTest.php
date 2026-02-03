@@ -179,7 +179,7 @@ class OpenIdConnectProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse, $userinfoResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse, $userinfoResponse) {
                 if ($method === 'POST') {
                     return $tokenResponse;
                 }
@@ -393,7 +393,7 @@ class OpenIdConnectProviderTest extends TestCase
             ->with(
                 'POST',
                 'https://keycloak.example.com/realms/test/protocol/openid-connect/token',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return isset($options['form_params']['grant_type'])
                         && $options['form_params']['grant_type'] === 'refresh_token'
                         && $options['form_params']['refresh_token'] === 'original-refresh-token';

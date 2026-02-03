@@ -393,7 +393,7 @@ class OAuthRefreshProcessorTest extends TestCase
     {
         $googleProvider = $this->createMock(RefreshableOAuthProviderInterface::class);
         $googleProvider->method('supports')
-            ->willReturnCallback(fn (string $p) => strtolower($p) === 'google');
+            ->willReturnCallback(static fn (string $p) => strtolower($p) === 'google');
         $googleProvider->expects($this->never())->method('refreshTokens');
 
         $appleTokenData = new OAuthTokenData(
@@ -410,7 +410,7 @@ class OAuthRefreshProcessorTest extends TestCase
 
         $appleProvider = $this->createMock(RefreshableOAuthProviderInterface::class);
         $appleProvider->method('supports')
-            ->willReturnCallback(fn (string $p) => strtolower($p) === 'apple');
+            ->willReturnCallback(static fn (string $p) => strtolower($p) === 'apple');
         $appleProvider->method('supportsRefresh')->willReturn(true);
         $appleProvider->expects($this->once())->method('refreshTokens')->willReturn($appleTokenData);
         $appleProvider->method('getUserDataFromTokenData')->willReturn($appleUserData);

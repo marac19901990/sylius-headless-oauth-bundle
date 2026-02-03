@@ -31,7 +31,7 @@ final class OAuthExtensionTest extends TestCase
         $this->assertCount(4, $functions);
 
         $functionNames = array_map(
-            fn ($function) => $function->getName(),
+            static fn ($function) => $function->getName(),
             $functions,
         );
 

@@ -80,7 +80,7 @@ class FacebookProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse, $userInfoResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse, $userInfoResponse) {
                 if ($method === 'POST' && str_contains($url, 'graph.facebook.com')) {
                     return $tokenResponse;
                 }
@@ -360,7 +360,7 @@ class FacebookProviderTest extends TestCase
             ->with(
                 'POST',
                 'https://graph.facebook.com/v19.0/oauth/access_token',
-                $this->callback(function ($options) {
+                $this->callback(static function ($options) {
                     return isset($options['form_params']['grant_type'])
                         && $options['form_params']['grant_type'] === 'refresh_token'
                         && $options['form_params']['refresh_token'] === 'original-refresh-token';
@@ -482,7 +482,7 @@ class FacebookProviderTest extends TestCase
         $this->httpClient
             ->expects($this->exactly(2))
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url) use ($tokenResponse) {
+            ->willReturnCallback(static function (string $method, string $url) use ($tokenResponse) {
                 if ($method === 'POST') {
                     return $tokenResponse;
                 }
